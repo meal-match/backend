@@ -23,6 +23,20 @@ cd backend
 npm install
 ```
 
+### Install Required VSCode Extensions
+
+Install the following required VSCode extensions.
+
+-   SonarLint
+-   ESLint
+-   Prettier
+-   Prettier ESLint
+
+Optionally, install the following recommended VSCode extensions.
+
+-   GitHub Copilot ([instructions for free student access](https://docs.github.com/en/copilot/managing-copilot/managing-copilot-as-an-individual-subscriber/managing-your-copilot-subscription/getting-free-access-to-copilot-as-a-student-teacher-or-maintainer)) **OR** Codeium
+-   GitLens
+
 ### Configure environment variables
 
 Create a `.env` file for local environment variables to be stored with the following command.
@@ -31,7 +45,7 @@ Create a `.env` file for local environment variables to be stored with the follo
 touch .env
 ```
 
-Open the newly created `.env` file and enter all needed environment variables. These are:
+Open the newly created `.env` file and enter all needed environment variables, listed below.
 
 -   `PORT`: The port the application will run on. (optional, defaults to `3000`)
 
