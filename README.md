@@ -47,6 +47,9 @@ touch .env
 
 Open the newly created `.env` file and enter all needed environment variables, listed below.
 
+-   `DB_USERNAME`: The username the application will use to connect to the database.
+-   `DB_PASSWORD`: The corresponding password for `DB_USERNAME`.
+-   `DB_CLUSTER_URL`: The URL of the database cluster. This is what comes after the "@" but before the query parameters in the full database URL.
 -   `PORT`: The port the application will run on. (optional, defaults to `3000`)
 
 ### Start the app
