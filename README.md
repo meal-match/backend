@@ -57,16 +57,10 @@ Open the newly created `.env` file and enter all needed environment variables, l
 Start the app locally with the following command.
 
 ```bash
-node --env-file=.env server.js
+npm run startlocal
 ```
 
-**Recommended:** Use `nodemon` to run the app. This will cause the app to redeploy after any changes are made, which is convenient for development. Do this with the following command.
-
-```bash
-nodemon --env-file=.env server.js
-```
-
-**Note:** If environment variables are configured differently than outlined above, the `--env-file` tag might need to be changed or removed.
+**Note:** `npm run start` can also be used, but `startlocal` is recommended as it utilizes `nodemon` to restart the app automatically when changes are made.
 
 ## Development
 

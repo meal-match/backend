@@ -19,7 +19,8 @@ export default [
         rules: {
             ...js.configs.recommended.rules,
             curly: 'error',
-            'prefer-const': 'error'
+            'prefer-const': 'error',
+            eqeqeq: 'error'
         }
     }
 ]
