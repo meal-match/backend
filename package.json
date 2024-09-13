@@ -1,0 +1,33 @@
+{
+    "name": "backend",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "start": "node server.js",
+        "startlocal": "nodemon server.js",
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "lint": "eslint .",
+        "format": "prettier --log-level silent --write \"**/*.+(js|jsx|json|yml|yaml|css|md|vue|mjs|ts|tsx)\"",
+        "prepare": "husky install"
+    },
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "bcrypt": "^5.1.1",
+        "express": "^4.19.2"
+    },
+    "devDependencies": {
+        "eslint": "^8.57.0",
+        "husky": "^8.0.0",
+        "nodemon": "^3.1.4",
+        "prettier": "^3.3.3",
+        "prettier-eslint": "^16.3.0"
+    },
+    "prettier": {
+        "trailingComma": "none",
+        "tabWidth": 4,
+        "semi": false,
+        "singleQuote": true
+    }
+}
