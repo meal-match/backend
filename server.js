@@ -1,23 +1,31 @@
+const cors = require('cors')
+const dotenv = require('dotenv')
 const express = require('express')
+const MongoStore = require('connect-mongo')
 const mongoose = require('mongoose')
 const session = require('express-session')
-const MongoStore = require('connect-mongo')
-const dotenv = require('dotenv')
 
 const app = express()
 app.use(express.json())
 dotenv.config()
+app.use(
+    cors({
+        origin: process.env.CLIENT_URL || 'http://localhost:8081',
+        credentials: true // allow cookies to be sent
+    })
+)
 
 // Connect to MongoDB
 const dbUsername = process.env.DB_USERNAME
 const dbPassword = process.env.DB_PASSWORD
+const dbName = process.env.DB_NAME
 const clusterUrl = process.env.DB_CLUSTER_URL
 
 if (!dbUsername || !dbPassword || !clusterUrl) {
     throw new Error('Missing MongoDB connection environment variables')
 }
 
-const mongoUrl = `mongodb+srv://${dbUsername}:${dbPassword}@${clusterUrl}?retryWrites=true&w=majority`
+const mongoUrl = `mongodb+srv://${dbUsername}:${dbPassword}@${clusterUrl}/${dbName}?retryWrites=true&w=majority`
 
 mongoose
     .connect(mongoUrl, {
