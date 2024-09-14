@@ -56,6 +56,7 @@ Open the newly created `.env` file and enter all needed environment variables, l
 -   `EMAIL_ADDRESS`: The email address being logged into.
 -   `EMAIL_REDIRECT_URI`: The email authentication redirect URI.
 -   `EMAIL_REFRESH_TOKEN`: The token used to refresh OAuth2 access from the [Google Developers Playground](https://developers.google.com/oauthplayground).
+-   `STRIPE_SECRET_KEY`: The client secret that will be used to login to [Stripe](https://dashboard.stripe.com).
 
 ### Start the app
 
