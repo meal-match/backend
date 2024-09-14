@@ -47,17 +47,19 @@ touch .env
 
 Open the newly created `.env` file and enter all needed environment variables, listed below.
 
--   `ENVIRONMENT`: The environment of the deployment (`dev` or `prod`).
+-   `CLIENT_URL`: The URL of the frontend application (optional, defaults to `http://localhost:8081`)
 -   `DB_USERNAME`: The username the application will use to connect to the database.
 -   `DB_PASSWORD`: The corresponding password for `DB_USERNAME`.
--   `DB_CLUSTER_URL`: The URL of the database cluster. This is what comes after the "@" but before the query parameters in the full database URL.
+-   `DB_CLUSTER_URL`: The URL of the database cluster. This is what comes after the "@" but before the query parameters in the full connection URL.
+-   `DB_NAME`: The name of the database.
 -   `EMAIL_CLIENT_ID`: The email client ID from [Google Cloud APIs](https://console.cloud.google.com/apis/credentials).
 -   `EMAIL_CLIENT_SECRET`: The corresponding client secret for `EMAIL_CLIENT_ID`.
 -   `EMAIL_ADDRESS`: The email address being logged into.
 -   `EMAIL_REDIRECT_URI`: The email authentication redirect URI.
 -   `EMAIL_REFRESH_TOKEN`: The token used to refresh OAuth2 access from the [Google Developers Playground](https://developers.google.com/oauthplayground).
--   `STRIPE_SECRET_KEY`: The client secret that will be used to login to [Stripe](https://dashboard.stripe.com).
+-   `ENVIRONMENT`: The environment of the deployment (`dev` or `prod`).
 -   `PORT`: The port the application will run on (optional, defaults to `3000`).
+-   `STRIPE_SECRET_KEY`: The client secret that will be used to login to [Stripe](https://dashboard.stripe.com).
 
 ### Start the app
 
