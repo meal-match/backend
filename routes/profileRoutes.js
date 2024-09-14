@@ -29,9 +29,10 @@ app.get('/', isAuthenticated, async (req, res) => {
         }
         res.status(200).json(user) // Return user profile data
     } catch (err) {
+        console.log(err)
         res.status(500).json({
             status: 500,
-            message: 'Internal server error: ' + err
+            message: 'Internal server error'
         })
     }
 })

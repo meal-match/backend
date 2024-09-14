@@ -75,7 +75,7 @@ app.use('/profile', profileRoutes)
 app.use((req, res) => {
     res.status(404).json({
         status: 404,
-        message: 'Not found'
+        message: 'Route not found'
     })
 })
 
