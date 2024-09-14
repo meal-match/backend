@@ -1,38 +1,40 @@
 {
-    "name": "backend",
-    "version": "1.0.0",
-    "description": "",
-    "main": "index.js",
-    "scripts": {
-        "start": "node server.js",
-        "startlocal": "nodemon server.js",
-        "test": "echo \"Error: no test specified\" && exit 1",
-        "lint": "eslint .",
-        "format": "prettier --log-level silent --write \"**/*.+(js|jsx|json|yml|yaml|css|md|vue|mjs|ts|tsx)\"",
-        "prepare": "husky install"
-    },
-    "author": "",
-    "license": "ISC",
-    "dependencies": {
-        "bcrypt": "^5.1.1",
-        "dotenv": "^16.4.5",
-        "express": "^4.19.2",
-        "googleapis": "^144.0.0",
-        "mongoose": "^8.6.2",
-        "nodemailer": "^6.9.15",
-        "stripe": "^16.11.0"
-    },
-    "devDependencies": {
-        "eslint": "^8.57.0",
-        "husky": "^8.0.0",
-        "nodemon": "^3.1.4",
-        "prettier": "^3.3.3",
-        "prettier-eslint": "^16.3.0"
-    },
-    "prettier": {
-        "trailingComma": "none",
-        "tabWidth": 4,
-        "semi": false,
-        "singleQuote": true
-    }
+	"name": "backend",
+	"version": "1.0.0",
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+		"start": "node server.js",
+		"startlocal": "nodemon server.js",
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"lint": "eslint .",
+		"format": "prettier --log-level silent --write \"**/*.+(js|jsx|json|yml|yaml|css|md|vue|mjs|ts|tsx)\"",
+		"prepare": "husky install"
+	},
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"bcrypt": "^5.1.1",
+		"connect-mongo": "^5.1.0",
+		"dotenv": "^16.4.5",
+		"express": "^4.19.2",
+		"express-session": "^1.18.0",
+		"googleapis": "^144.0.0",
+		"mongoose": "^8.6.2",
+		"nodemailer": "^6.9.15",
+		"stripe": "^16.11.0"
+	},
+	"devDependencies": {
+		"eslint": "^8.57.0",
+		"husky": "^8.0.0",
+		"nodemon": "^3.1.4",
+		"prettier": "^3.3.3",
+		"prettier-eslint": "^16.3.0"
+	},
+	"prettier": {
+		"trailingComma": "none",
+		"tabWidth": 4,
+		"semi": false,
+		"singleQuote": true
+	}
 }

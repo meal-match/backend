@@ -1,5 +1,7 @@
 const express = require('express')
 const mongoose = require('mongoose')
+const session = require('express-session')
+const MongoStore = require('connect-mongo')
 const dotenv = require('dotenv')
 
 const app = express()
@@ -29,6 +31,23 @@ mongoose
         console.log('Error connecting to MongoDB', err)
     })
 
+// Configure session management
+app.use(
+    session({
+        secret: process.env.SESSION_SECRET || 'yourSecretKey', // Set a strong secret for session encryption
+        resave: false, // Don't save session if unmodified
+        saveUninitialized: false, // Don't create session until something is stored
+        store: MongoStore.create({
+            mongoUrl: mongoUrl, // Store session in MongoDB
+            collectionName: 'sessions' // The name of the collection for sessions
+        }),
+        cookie: {
+            secure: process.env.ENVIRONMENT === 'prod', // Use secure cookies in production
+            maxAge: 1000 * 60 * 60 * 24 // Session expires in 1 day
+        }
+    })
+)
+
 // Root route (API spec?)
 app.get('/', (req, res) => {
     res.send(
@@ -38,9 +57,11 @@ app.get('/', (req, res) => {
 
 // Include route files
 const authRoutes = require('./routes/authRoutes')
+const profileRoutes = require('./routes/profileRoutes')
 
 // Use routes
 app.use('/auth', authRoutes)
+app.use('/profile', profileRoutes)
 
 // Catch-all route for undefined endpoints
 app.use((req, res) => {

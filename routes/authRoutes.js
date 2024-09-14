@@ -2,7 +2,6 @@ const express = require('express')
 const User = require('../models/user')
 
 const app = express()
-app.use(express.json())
 
 // Sign up route
 app.post('/signup', async (req, res) => {
@@ -30,6 +29,7 @@ app.post('/login', async (req, res) => {
         const isMatch = await user.comparePassword(password)
 
         if (isMatch) {
+            req.session.userId = user._id
             res.status(200).send('Login successful')
         } else {
             res.status(401).send('Unauthorized')
@@ -37,6 +37,16 @@ app.post('/login', async (req, res) => {
     } catch (err) {
         res.status(500).send('Internal server error:\n' + err)
     }
+})
+
+app.post('/logout', (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            return res.status(500).send('Internal server error:\n' + err)
+        }
+        res.clearCookie('connect.sid')
+        res.status(200).send('Logged out successfully')
+    })
 })
 
 module.exports = app
