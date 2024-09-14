@@ -60,7 +60,10 @@ app.post('/login', async (req, res) => {
 app.post('/logout', (req, res) => {
     req.session.destroy((err) => {
         if (err) {
-            return res.status(500).send('Internal server error:\n' + err)
+            return res.status(500).json({
+                status: 500,
+                message: 'Internal server error: ' + err
+            })
         }
         res.clearCookie('connect.sid')
         res.status(200).json({
