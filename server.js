@@ -73,7 +73,10 @@ app.use('/profile', profileRoutes)
 
 // Catch-all route for undefined endpoints
 app.use((req, res) => {
-    res.status(404).send('Route not found')
+    res.status(404).json({
+        status: 404,
+        message: 'Not found'
+    })
 })
 
 // Set port to environment variable or 3000 as default

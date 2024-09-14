@@ -9,9 +9,15 @@ app.post('/signup', async (req, res) => {
 
     try {
         await User.create({ email, password, firstName, lastName })
-        res.status(201).send('User created')
+        res.status(201).json({
+            status: 201,
+            message: 'User created successfully'
+        })
     } catch (err) {
-        res.status(500).send('Internal server error:\n' + err)
+        res.status(500).json({
+            status: 500,
+            message: 'Internal server error: ' + err
+        })
     }
 })
 
@@ -23,29 +29,47 @@ app.post('/login', async (req, res) => {
         const user = await User.findOne({ email })
 
         if (!user) {
-            return res.status(401).send('Unauthorized')
+            return res.status(401).json({
+                status: 401,
+                message: 'Unauthorized'
+            })
         }
 
         const isMatch = await user.comparePassword(password)
 
         if (isMatch) {
             req.session.userId = user._id
-            res.status(200).send('Login successful')
+            res.status(200).json({
+                status: 200,
+                message: 'Logged in successfully'
+            })
         } else {
-            res.status(401).send('Unauthorized')
+            res.status(401).json({
+                status: 401,
+                message: 'Unauthorized'
+            })
         }
     } catch (err) {
-        res.status(500).send('Internal server error:\n' + err)
+        res.status(500).json({
+            status: 500,
+            message: 'Internal server error: ' + err
+        })
     }
 })
 
 app.post('/logout', (req, res) => {
     req.session.destroy((err) => {
         if (err) {
-            return res.status(500).send('Internal server error:\n' + err)
+            return res.status(500).json({
+                status: 500,
+                message: 'Internal server error: ' + err
+            })
         }
         res.clearCookie('connect.sid')
-        res.status(200).send('Logged out successfully')
+        res.status(200).json({
+            status: 200,
+            message: 'Logged out successfully'
+        })
     })
 })
 
