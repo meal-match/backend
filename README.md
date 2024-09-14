@@ -47,9 +47,11 @@ touch .env
 
 Open the newly created `.env` file and enter all needed environment variables, listed below.
 
+-   `ENVIRONMENT`: The environment of the deployment (`dev` or `prod`).
 -   `DB_USERNAME`: The username the application will use to connect to the database.
 -   `DB_PASSWORD`: The corresponding password for `DB_USERNAME`.
 -   `DB_CLUSTER_URL`: The URL of the database cluster. This is what comes after the "@" but before the query parameters in the full database URL.
+-   `SESSION_SECRET`: A string used to encrypt sessions.
 -   `PORT`: The port the application will run on. (optional, defaults to `3000`)
 
 ### Start the app
@@ -60,7 +62,7 @@ Start the app locally with the following command.
 npm run startlocal
 ```
 
-**Note:** `npm run start` can also be used, but `startlocal` is recommended as it utilizes `nodemon` to restart the app automatically when changes are made.
+**Note:** `npm run start` can also be used, but `startlocal` is recommended as it utilizes `nodemon` to restart the app automatically when changes are made. `npm run start` should be used in a production environment.
 
 ## Development
 

@@ -42,7 +42,7 @@ app.use(
             collectionName: 'sessions' // The name of the collection for sessions
         }),
         cookie: {
-            secure: process.env.ENVIRONMENT === 'prod', // Use secure cookies in production (TODO: fix this)
+            secure: process.env.ENVIRONMENT === 'prod', // Use secure cookies in production
             maxAge: 1000 * 60 * 60 * 24 // Session expires in 1 day
         }
     })
