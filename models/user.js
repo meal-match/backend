@@ -7,8 +7,8 @@ const UserSchema = new mongoose.Schema({
         required: true,
         unique: true,
         match: [
-            /^[a-zA-Z0-9._%+-]+@(crimson\.)?ua\.edu$/,
-            'Email must be a valid ua.edu address'
+            /^[a-zA-Z0-9._%+-]+@crimson\.ua\.edu$/,
+            'Email must be a valid crimson.ua.edu address'
         ]
     },
     password: {
@@ -21,13 +21,13 @@ const UserSchema = new mongoose.Schema({
                 // - At least one digit
                 // - At least one lowercase letter
                 // - At least one uppercase letter
-                // - At least one special character
+                // - At least one special character from ! @ # $ % ^ & *
                 // - Minimum length of 8 characters
-                return /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}$/.test(
+                return /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}$/.test(
                     v
                 )
             },
-            message: `Password must be at least 8 characters long and include at least one number, one uppercase letter, one lowercase letter, and one special character.`
+            message: `Password must be at least 8 characters long and include at least one number, one uppercase letter, one lowercase letter, and one special character (! @ # $ % ^ & *).`
         }
     },
     firstName: {
