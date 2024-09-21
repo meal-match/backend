@@ -160,6 +160,14 @@ app.post('/reset-password', async (req, res) => {
             })
         }
 
+        // Make sure new password is different from the old password
+        if (await user.comparePassword(password)) {
+            return res.status(400).json({
+                status: 400,
+                message: 'New password must be different from the old password'
+            })
+        }
+
         // Update the user's password
         user.password = password
         user.resetPasswordToken = undefined
