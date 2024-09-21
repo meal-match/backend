@@ -59,6 +59,7 @@ Open the newly created `.env` file and enter all needed environment variables, l
 -   `EMAIL_REFRESH_TOKEN`: The token used to refresh OAuth2 access from the [Google Developers Playground](https://developers.google.com/oauthplayground).
 -   `ENVIRONMENT`: The environment of the deployment (`dev` or `prod`).
 -   `PORT`: The port the application will run on (optional, defaults to `3000`).
+-   `SESSION_SECRET`: The string used to encode session data.
 -   `STRIPE_SECRET_KEY`: The client secret that will be used to login to [Stripe](https://dashboard.stripe.com).
 
 ### Start the app

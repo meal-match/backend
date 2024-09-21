@@ -6,15 +6,30 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true,
+        lowercase: true,
         match: [
-            /^[a-zA-Z0-9._%+-]+@(crimson\.)?ua\.edu$/,
-            'Email must be a valid ua.edu address'
+            /^[a-zA-Z0-9._%+-]+@crimson\.ua\.edu$/,
+            'Email must be a valid crimson.ua.edu address'
         ]
     },
     password: {
         type: String,
         required: true,
-        minlength: 8
+        minlength: 8,
+        validate: {
+            validator: function (v) {
+                // Regular expression for the password criteria:
+                // - At least one digit
+                // - At least one lowercase letter
+                // - At least one uppercase letter
+                // - At least one special character from ! @ # $ % ^ & *
+                // - Minimum length of 8 characters
+                return /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}$/.test(
+                    v
+                )
+            },
+            message: `Password must be at least 8 characters long and include at least one number, one uppercase letter, one lowercase letter, and one special character (! @ # $ % ^ & *).`
+        }
     },
     firstName: {
         type: String,
@@ -23,7 +38,14 @@ const UserSchema = new mongoose.Schema({
     lastName: {
         type: String,
         required: true
-    }
+    },
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    verificationToken: String, // Store the verification token
+    resetPasswordToken: String, // Store the reset token
+    resetPasswordExpires: Date // Expiry time for the reset token
 })
 
 // Hash the password before saving the user document
