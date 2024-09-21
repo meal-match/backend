@@ -110,7 +110,7 @@ app.post('/send-reset', async (req, res) => {
         const subject = 'Password Reset'
         const html = `
             <p>You are receiving this because you (or someone else) have requested the reset of the password for your account. Click the link below to reset your password:</p>
-            <a href="${process.env.CLIENT_URL}/auth/forgotPassword?token=${token}">Reset Password</a>`
+            <a href="${process.env.CLIENT_URL}/auth/resetPassword?token=${token}">Reset Password</a>`
         await emailClient.sendEmail({ to: email, subject, html })
         res.status(200).json({
             status: 200,
