@@ -39,8 +39,13 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    verificationToken: String, // Store the verification token
     resetPasswordToken: String, // Store the reset token
-    resetPasswordExpires: Date // Expiry time for the token
+    resetPasswordExpires: Date // Expiry time for the reset token
 })
 
 // Hash the password before saving the user document
