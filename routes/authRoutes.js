@@ -70,6 +70,7 @@ app.post('/login', async (req, res) => {
     }
 })
 
+// Logout route
 app.post('/logout', (req, res) => {
     req.session.destroy((err) => {
         if (err) {
@@ -87,6 +88,22 @@ app.post('/logout', (req, res) => {
     })
 })
 
+// Route to check if a user is logged in
+app.get('/status', async (req, res) => {
+    if (req.session?.userId) {
+        res.status(200).json({
+            status: 200,
+            message: 'Logged in'
+        })
+    } else {
+        res.status(401).json({
+            status: 401,
+            message: 'Not logged in'
+        })
+    }
+})
+
+// Route to send email with password reset link
 app.post('/send-reset', async (req, res) => {
     const { email } = req.body
 
@@ -125,6 +142,7 @@ app.post('/send-reset', async (req, res) => {
     }
 })
 
+// Reset password route
 app.post('/reset-password', async (req, res) => {
     const { token, password } = req.body
 
