@@ -6,6 +6,7 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true,
+        lowercase: true,
         match: [
             /^[a-zA-Z0-9._%+-]+@crimson\.ua\.edu$/,
             'Email must be a valid crimson.ua.edu address'
