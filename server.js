@@ -8,12 +8,23 @@ const session = require('express-session')
 const app = express()
 app.use(express.json())
 dotenv.config()
-app.use(
-    cors({
-        origin: process.env.CLIENT_URL || 'http://localhost:8081',
-        credentials: true // allow cookies to be sent
-    })
-)
+
+// Enable CORS
+if (process.env.ENVIRONMENT === 'dev') {
+    app.use(
+        cors({
+            origin: true, // Allow requests from any origin
+            credentials: true // Allow cookies to be sent
+        })
+    )
+} else {
+    app.use(
+        cors({
+            origin: process.env.CLIENT_URL, // Allow requests only from client URL
+            credentials: true // Allow cookies to be sent
+        })
+    )
+}
 
 // Connect to MongoDB
 const dbUsername = process.env.DB_USERNAME
