@@ -43,6 +43,8 @@ app.post('/signup', async (req, res) => {
             payment_method_types: ['card']
         })
 
+        const paymentSetupIntent = setupIntent.client_secret
+
         await User.create({
             email,
             password,
@@ -50,7 +52,7 @@ app.post('/signup', async (req, res) => {
             lastName,
             isVerified,
             verificationToken,
-            paymentSetupIntent: setupIntent.client_secret
+            paymentSetupIntent
         })
 
         await sendVerificationEmail(email, verificationToken)
