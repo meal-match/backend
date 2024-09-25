@@ -47,7 +47,7 @@ touch .env
 
 Open the newly created `.env` file and enter all needed environment variables, listed below.
 
--   `CLIENT_URL`: The URL of the frontend application (optional, defaults to `http://localhost:8081`)
+-   `CLIENT_URL`: The URL of the frontend application
 -   `DB_USERNAME`: The username the application will use to connect to the database.
 -   `DB_PASSWORD`: The corresponding password for `DB_USERNAME`.
 -   `DB_CLUSTER_URL`: The URL of the database cluster. This is what comes after the "@" but before the query parameters in the full connection URL.

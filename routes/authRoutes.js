@@ -12,7 +12,7 @@ const sendVerificationEmail = async (email, verificationToken) => {
     const html = `
             <p>You are receiving this because you (or someone else) have signed up for a MealMatch account. Click the link below to verify your email:</p>
             <a href="${process.env.CLIENT_URL}/auth/verifyEmail?token=${verificationToken}">Verify Email</a>
-            <p>If you cannot click the link, copy and paste the following URL into your browser:</p>
+            <p>If you cannot click the link above, copy and paste the following URL into your browser:</p>
             <p>${process.env.CLIENT_URL}/auth/verifyEmail?token=${verificationToken}</p>`
     await emailClient.sendEmail({ to: email, subject, html })
 }
@@ -30,6 +30,7 @@ app.post('/signup', async (req, res) => {
             })
         }
 
+        const isVerified = process.env.ENVIRONMENT === 'dev' // Automatically verify user in dev environment
         const verificationToken = crypto.randomBytes(32).toString('hex')
 
         await User.create({
@@ -37,6 +38,7 @@ app.post('/signup', async (req, res) => {
             password,
             firstName,
             lastName,
+            isVerified,
             verificationToken
         })
 
@@ -160,7 +162,7 @@ app.post('/send-reset', async (req, res) => {
         const html = `
             <p>You are receiving this because you (or someone else) have requested the reset of the password for your account. Click the link below to reset your password:</p>
             <a href="${process.env.CLIENT_URL}/auth/resetPassword?token=${token}">Reset Password</a>
-            <p>If you cannot click the link, copy and paste the following URL into your browser:</p>
+            <p>If you cannot click the link above, copy and paste the following URL into your browser:</p>
             <p>${process.env.CLIENT_URL}/auth/resetPassword?token=${token}</p>`
         await emailClient.sendEmail({ to: email, subject, html })
         res.status(200).json({
