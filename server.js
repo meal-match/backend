@@ -77,10 +77,12 @@ app.get('/', (req, res) => {
 // Include route files
 const authRoutes = require('./routes/authRoutes')
 const profileRoutes = require('./routes/profileRoutes')
+const restaurantRoutes = require('./routes/restaurantRoutes')
 
 // Use routes
 app.use('/auth', authRoutes)
 app.use('/profile', profileRoutes)
+app.use('/restaurants', restaurantRoutes)
 
 // Catch-all route for undefined endpoints
 app.use((req, res) => {
