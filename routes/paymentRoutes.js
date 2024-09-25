@@ -6,7 +6,7 @@ const User = require('../models/user')
 
 const app = express()
 
-app.post('/add-payment-method', isAuthenticated, async (req, res) => {
+app.post('/method', isAuthenticated, async (req, res) => {
     const { paymentMethodID } = req.body
 
     try {
