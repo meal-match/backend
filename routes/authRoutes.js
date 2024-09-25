@@ -1,7 +1,8 @@
 const crypto = require('crypto')
 const dotenv = require('dotenv')
-const emailClient = require('../services/emailClient')
 const express = require('express')
+const emailClient = require('../services/emailClient')
+const stripeClient = require('../services/stripeClient')
 const User = require('../models/user')
 
 const app = express()
@@ -25,32 +26,40 @@ app.post('/signup', async (req, res) => {
         const user = await User.findOne({ email })
         if (user) {
             return res.status(400).json({
-                status: 400,
                 message: 'Email already exists'
             })
         }
 
         const verificationToken = crypto.randomBytes(32).toString('hex')
 
+        const stripeCustomer = await stripeClient.customers.create({
+            email,
+            name: `${firstName} ${lastName}`
+        })
+
+        const setupIntent = await stripeClient.setupIntents.create({
+            customer: stripeCustomer.id,
+            payment_method_types: ['card']
+        })
+
         await User.create({
             email,
             password,
             firstName,
             lastName,
-            verificationToken
+            verificationToken,
+            paymentSetupIntent: setupIntent.client_secret
         })
 
         await sendVerificationEmail(email, verificationToken)
 
         res.status(201).json({
-            status: 201,
             message:
                 'User created successfully. Please check your email for a link to verify your email.'
         })
     } catch (err) {
         console.log(err)
         res.status(500).json({
-            status: 500,
             message: 'Internal server error'
         })
     }
@@ -65,7 +74,6 @@ app.post('/login', async (req, res) => {
 
         if (!user) {
             return res.status(401).json({
-                status: 401,
                 message: 'Unauthorized'
             })
         }
@@ -76,7 +84,6 @@ app.post('/login', async (req, res) => {
             if (!user.isVerified) {
                 await sendVerificationEmail(email, user.verificationToken)
                 return res.status(403).json({
-                    status: 403,
                     message:
                         "Your email is not verified. We've resent an email with a verification link."
                 })
@@ -84,19 +91,16 @@ app.post('/login', async (req, res) => {
 
             req.session.userId = user._id
             res.status(200).json({
-                status: 200,
                 message: 'Logged in successfully'
             })
         } else {
             res.status(401).json({
-                status: 401,
                 message: 'Unauthorized'
             })
         }
     } catch (err) {
         console.log(err)
         res.status(500).json({
-            status: 500,
             message: 'Internal server error'
         })
     }
@@ -108,13 +112,11 @@ app.post('/logout', (req, res) => {
         if (err) {
             console.log(err)
             return res.status(500).json({
-                status: 500,
                 message: 'Internal server error'
             })
         }
         res.clearCookie('connect.sid')
         res.status(200).json({
-            status: 200,
             message: 'Logged out successfully'
         })
     })
@@ -124,12 +126,10 @@ app.post('/logout', (req, res) => {
 app.get('/status', async (req, res) => {
     if (req.session?.userId) {
         res.status(200).json({
-            status: 200,
             message: 'Logged in'
         })
     } else {
         res.status(401).json({
-            status: 401,
             message: 'Not logged in'
         })
     }
@@ -144,7 +144,6 @@ app.post('/send-reset', async (req, res) => {
 
         if (!user) {
             return res.status(401).json({
-                status: 401,
                 message: 'Email not found'
             })
         }
@@ -164,13 +163,11 @@ app.post('/send-reset', async (req, res) => {
             <p>${process.env.CLIENT_URL}/auth/resetPassword?token=${token}</p>`
         await emailClient.sendEmail({ to: email, subject, html })
         res.status(200).json({
-            status: 200,
             message: 'Password reset link sent'
         })
     } catch (err) {
         console.log(err)
         res.status(500).json({
-            status: 500,
             message: 'Internal server error'
         })
     }
@@ -189,7 +186,6 @@ app.post('/reset-password', async (req, res) => {
 
         if (!user) {
             return res.status(400).json({
-                status: 400,
                 message: 'Password reset token is invalid or has expired.'
             })
         }
@@ -197,7 +193,6 @@ app.post('/reset-password', async (req, res) => {
         // Make sure new password is different from the old password
         if (await user.comparePassword(password)) {
             return res.status(400).json({
-                status: 400,
                 message: 'New password must be different from the old password'
             })
         }
@@ -211,13 +206,11 @@ app.post('/reset-password', async (req, res) => {
         await user.save()
 
         res.status(200).json({
-            status: 200,
             message: 'Password reset successfully'
         })
     } catch (err) {
         console.log(err)
         res.status(500).json({
-            status: 500,
             message: 'Internal server error'
         })
     }
@@ -233,14 +226,12 @@ app.post('/verify', async (req, res) => {
 
         if (!user) {
             return res.status(400).json({
-                status: 400,
                 message: 'Invalid token'
             })
         }
 
         if (user.isVerified) {
             return res.status(400).json({
-                status: 400,
                 message: 'Email is already verified'
             })
         }
@@ -251,12 +242,10 @@ app.post('/verify', async (req, res) => {
         await user.save()
 
         res.status(200).json({
-            status: 200,
             message: 'Email verified successfully'
         })
     } catch (err) {
         res.status(500).json({
-            status: 500,
             message: 'Internal server error'
         })
     }
