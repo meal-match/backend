@@ -76,16 +76,17 @@ app.get('/', (req, res) => {
 
 // Include route files
 const authRoutes = require('./routes/authRoutes')
+const paymentRoutes = require('./routes/paymentRoutes')
 const profileRoutes = require('./routes/profileRoutes')
 
 // Use routes
 app.use('/auth', authRoutes)
+app.use('/payment', paymentRoutes)
 app.use('/profile', profileRoutes)
 
 // Catch-all route for undefined endpoints
 app.use((req, res) => {
     res.status(404).json({
-        status: 404,
         message: 'Route not found'
     })
 })
