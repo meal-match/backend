@@ -8,8 +8,6 @@ app.get('/', async (req, res) => {
     try {
         let restaurants = await Restaurant.find()
 
-        console.log(restaurants)
-
         // Iterate through each restaurant to handle the logic for sides, drinks, and sauces
         restaurants = restaurants.map((restaurant) => {
             return {
