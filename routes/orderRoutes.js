@@ -1,18 +1,9 @@
 const express = require('express')
 const Order = require('../models/order')
 const User = require('../models/user')
+const isAuthenticated = require('../utils/authUtils')
 
 const app = express()
-
-const isAuthenticated = (req, res, next) => {
-    if (req.session?.userId) {
-        next()
-    } else {
-        res.status(401).json({
-            message: 'Unauthorized'
-        })
-    }
-}
 
 // Route to fetch open orders that need a seller
 app.get('/', isAuthenticated, async (req, res) => {
