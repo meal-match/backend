@@ -25,6 +25,13 @@ app.get('/', isAuthenticated, async (req, res) => {
             desiredPickupTime: {
                 $gte: now,
                 $lte: thirtyMinutesFromNow
+            },
+            // Allow a buyer to claim their own order in dev mode
+            buyer: {
+                $ne:
+                    process.env.ENVIRONMENT === 'dev'
+                        ? null
+                        : req.session.userId
             }
         })
 
@@ -122,10 +129,10 @@ app.delete('/cancel-buy/:id', isAuthenticated, async (req, res) => {
         if (order.status === 'Pending') {
             // TODO: refund user
 
-            await order.remove()
+            await Order.findByIdAndDelete(id)
 
             user.openOrders = user.openOrders.filter(
-                (order) => order.id.toString() !== id
+                (order) => order.id.toString() !== id || order.type !== 'buy'
             )
             await user.save()
 
@@ -187,9 +194,60 @@ app.patch('/claim/:id', isAuthenticated, async (req, res) => {
             })
         } else {
             return res.status(400).json({
-                message: 'Order has already been claimed'
+                message: 'Order cannot be claimed'
             })
         }
+    } catch (err) {
+        console.log(err)
+        res.status(500).json({
+            message: 'Internal server error'
+        })
+    }
+})
+
+// Route for a seller to unclaim an order
+app.patch('/unclaim/:id', isAuthenticated, async (req, res) => {
+    const { id } = req.params
+    try {
+        const order = await Order.findById(id)
+        if (!order) {
+            return res.status(404).json({
+                message: 'Order not found'
+            })
+        }
+
+        const user = await User.findById(req.session.userId, 'openOrders')
+        if (!user) {
+            return res.status(404).json({
+                status: 404,
+                message: 'User not found'
+            })
+        }
+
+        if (order.status !== 'Claimed') {
+            return res.status(400).json({
+                message: 'Order cannot be unclaimed'
+            })
+        }
+
+        if (order.seller.toString() !== req.session.userId) {
+            return res.status(401).json({
+                message: 'Unauthorized'
+            })
+        }
+
+        order.status = 'Pending'
+        order.seller = null
+        await order.save()
+
+        user.openOrders = user.openOrders.filter(
+            (order) => order.id.toString() !== id || order.type !== 'sell'
+        )
+        await user.save()
+
+        res.status(200).json({
+            message: 'Order unclaimed successfully'
+        })
     } catch (err) {
         console.log(err)
         res.status(500).json({
