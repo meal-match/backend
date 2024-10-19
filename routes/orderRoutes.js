@@ -103,7 +103,7 @@ app.post('/buy', isAuthenticated, async (req, res) => {
 })
 
 // Route for a buyer to cancel an order
-app.delete('/cancel-buy/:id', isAuthenticated, async (req, res) => {
+app.delete('/:id/cancel-buy', isAuthenticated, async (req, res) => {
     const { id } = req.params
     try {
         const order = await Order.findById(id)
@@ -154,7 +154,7 @@ app.delete('/cancel-buy/:id', isAuthenticated, async (req, res) => {
 })
 
 // Route for a seller to claim a specific order
-app.patch('/claim/:id', isAuthenticated, async (req, res) => {
+app.patch('/:id/claim', isAuthenticated, async (req, res) => {
     const { id } = req.params
     try {
         const order = await Order.findById(id)
@@ -206,7 +206,7 @@ app.patch('/claim/:id', isAuthenticated, async (req, res) => {
 })
 
 // Route for a seller to unclaim an order
-app.patch('/unclaim/:id', isAuthenticated, async (req, res) => {
+app.patch('/:id/unclaim', isAuthenticated, async (req, res) => {
     const { id } = req.params
     try {
         const order = await Order.findById(id)
