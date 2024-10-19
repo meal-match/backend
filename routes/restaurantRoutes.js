@@ -24,11 +24,10 @@ app.get('/', async (req, res) => {
             }
         })
 
-        res.status(200).json({ restaurants, status: 200 })
+        res.status(200).json({ restaurants })
     } catch (err) {
         console.log(err)
         res.status(500).json({
-            status: 500,
             message: 'Internal server error'
         })
     }

@@ -1,6 +1,11 @@
 const bcrypt = require('bcrypt')
 const mongoose = require('mongoose')
 
+const OrderSchema = new mongoose.Schema({
+    id: { type: mongoose.Schema.Types.ObjectId, ref: 'Order', required: true },
+    type: { type: String, required: true }
+})
+
 const UserSchema = new mongoose.Schema({
     email: {
         type: String,
@@ -45,7 +50,8 @@ const UserSchema = new mongoose.Schema({
     },
     verificationToken: String, // Store the verification token
     resetPasswordToken: String, // Store the reset token
-    resetPasswordExpires: Date // Expiry time for the reset token
+    resetPasswordExpires: Date, // Expiry time for the reset token
+    openOrders: [OrderSchema] // Array of open orders
 })
 
 // Hash the password before saving the user document
