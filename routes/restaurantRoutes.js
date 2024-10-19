@@ -1,10 +1,11 @@
 const express = require('express')
 const Restaurant = require('../models/restaurant')
+const { isAuthenticated } = require('../utils/authUtils')
 
 const app = express()
 
 // Restaurants route
-app.get('/', async (req, res) => {
+app.get('/', isAuthenticated, async (req, res) => {
     try {
         let restaurants = await Restaurant.find()
 

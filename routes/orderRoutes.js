@@ -1,7 +1,7 @@
 const express = require('express')
 const Order = require('../models/order')
 const User = require('../models/user')
-const isAuthenticated = require('../utils/authUtils')
+const { isAuthenticated } = require('../utils/authUtils')
 
 const app = express()
 
