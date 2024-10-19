@@ -16,9 +16,51 @@ app.get('/', async (req, res) => {
                     return {
                         entree: meal.entree,
                         entreeCustomizations: meal.entreeCustomizations,
-                        sides: meal.sides || restaurant.defaultSides,
-                        drinks: meal.drinks || restaurant.defaultDrinks,
-                        sauces: meal.sauces || restaurant.defaultSauces
+                        maxEntreeCustomizations:
+                            meal.maxEntreeCustomizations ||
+                            restaurant.defaultMaxEntreeCustomizations,
+                        sides:
+                            meal.sides.map((side) => {
+                                return {
+                                    side: side.side,
+                                    sideCustomizations: side.sideCustomizations,
+                                    maxSideCustomizations:
+                                        side.maxSideCustomizations ||
+                                        restaurant.defaultMaxSideCustomizations
+                                }
+                            }) ||
+                            restaurant.defaultSides.map((side) => {
+                                return {
+                                    side: side.side,
+                                    sideCustomizations: side.sideCustomizations,
+                                    maxSideCustomizations:
+                                        side.maxSideCustomizations ||
+                                        restaurant.defaultMaxSideCustomizations
+                                }
+                            }),
+                        drinks:
+                            meal.drinks.map((drink) => {
+                                return {
+                                    drink: drink.drink,
+                                    drinkCustomizations:
+                                        drink.drinkCustomizations,
+                                    maxDrinkCustomizations:
+                                        drink.maxDrinkCustomizations ||
+                                        restaurant.defaultMaxDrinkCustomizations
+                                }
+                            }) ||
+                            restaurant.defaultDrinks.map((drink) => {
+                                return {
+                                    drink: drink.drink,
+                                    drinkCustomizations:
+                                        drink.drinkCustomizations,
+                                    maxDrinkCustomizations:
+                                        drink.maxDrinkCustomizations ||
+                                        restaurant.defaultMaxDrinkCustomizations
+                                }
+                            }),
+                        sauces: meal.sauces || restaurant.defaultSauces,
+                        maxSauces: meal.maxSauces || restaurant.defaultMaxSauces
                     }
                 })
             }

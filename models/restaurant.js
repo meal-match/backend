@@ -9,6 +9,30 @@ const SideSchema = new mongoose.Schema({
         type: [String],
         required: true,
         default: []
+    },
+    maxSideCustomizations: {
+        // If there is no maxSideCustomizations field, refer to restaurant's defaultMaxSideCustomizations
+        type: Number,
+        required: false,
+        default: undefined
+    }
+})
+
+const DrinkSchema = new mongoose.Schema({
+    drink: {
+        type: String,
+        required: true
+    },
+    drinkCustomizations: {
+        type: [String],
+        required: true,
+        default: []
+    },
+    maxDrinkCustomizations: {
+        // If there is no maxDrinkCustomizations field, refer to restaurant's defaultMaxDrinkCustomizations
+        type: Number,
+        required: false,
+        default: undefined
     }
 })
 
@@ -30,13 +54,25 @@ const MealSchema = new mongoose.Schema({
     },
     drinks: {
         // If there is no drinks field, refer to restaurant's defaultDrinks
-        type: [String],
+        type: [DrinkSchema],
         required: false,
         default: undefined
     },
     sauces: {
         // If there is no sauces field, refer to restaurant's defaultSauces
         type: [String],
+        required: false,
+        default: undefined
+    },
+    maxEntreeCustomizations: {
+        // If there is no maxEntreeCustomizations field, refer to restaurant's defaultMaxEntreeCustomizations
+        type: Number,
+        required: false,
+        default: undefined
+    },
+    maxSauces: {
+        // If there is no maxSauces field, refer to restaurant's defaultMaxSauces
+        type: Number,
         required: false,
         default: undefined
     }
@@ -57,7 +93,7 @@ const RestaurantSchema = new mongoose.Schema({
         default: []
     },
     defaultDrinks: {
-        type: [String],
+        type: [DrinkSchema],
         required: true,
         default: []
     },
@@ -65,6 +101,26 @@ const RestaurantSchema = new mongoose.Schema({
         type: [String],
         required: true,
         default: []
+    },
+    defaultMaxSauces: {
+        type: Number,
+        required: true,
+        default: 0
+    },
+    defaultMaxDrinkCustomizations: {
+        type: Number,
+        required: true,
+        default: 0
+    },
+    defaultMaxSideCustomizations: {
+        type: Number,
+        required: true,
+        default: 0
+    },
+    defaultMaxEntreeCustomizations: {
+        type: Number,
+        required: true,
+        default: 0
     }
 })
 
