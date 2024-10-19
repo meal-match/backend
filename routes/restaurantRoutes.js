@@ -8,6 +8,8 @@ app.get('/', async (req, res) => {
     try {
         let restaurants = await Restaurant.find()
 
+        console.log(restaurants)
+
         // Iterate through each restaurant to handle the logic for sides, drinks, and sauces
         restaurants = restaurants.map((restaurant) => {
             return {
@@ -19,46 +21,48 @@ app.get('/', async (req, res) => {
                         maxEntreeCustomizations:
                             meal.maxEntreeCustomizations ||
                             restaurant.defaultMaxEntreeCustomizations,
-                        sides:
-                            meal.sides.map((side) => {
-                                return {
-                                    side: side.side,
-                                    sideCustomizations: side.sideCustomizations,
-                                    maxSideCustomizations:
-                                        side.maxSideCustomizations ||
-                                        restaurant.defaultMaxSideCustomizations
-                                }
-                            }) ||
-                            restaurant.defaultSides.map((side) => {
-                                return {
-                                    side: side.side,
-                                    sideCustomizations: side.sideCustomizations,
-                                    maxSideCustomizations:
-                                        side.maxSideCustomizations ||
-                                        restaurant.defaultMaxSideCustomizations
-                                }
-                            }),
-                        drinks:
-                            meal.drinks.map((drink) => {
-                                return {
-                                    drink: drink.drink,
-                                    drinkCustomizations:
-                                        drink.drinkCustomizations,
-                                    maxDrinkCustomizations:
-                                        drink.maxDrinkCustomizations ||
-                                        restaurant.defaultMaxDrinkCustomizations
-                                }
-                            }) ||
-                            restaurant.defaultDrinks.map((drink) => {
-                                return {
-                                    drink: drink.drink,
-                                    drinkCustomizations:
-                                        drink.drinkCustomizations,
-                                    maxDrinkCustomizations:
-                                        drink.maxDrinkCustomizations ||
-                                        restaurant.defaultMaxDrinkCustomizations
-                                }
-                            }),
+                        sides: meal.sides
+                            ? meal.sides.map((side) => {
+                                  return {
+                                      side: side.side,
+                                      sideCustomizations:
+                                          side.sideCustomizations,
+                                      maxSideCustomizations:
+                                          side.maxSideCustomizations ||
+                                          restaurant.defaultMaxSideCustomizations
+                                  }
+                              })
+                            : restaurant.defaultSides.map((side) => {
+                                  return {
+                                      side: side.side,
+                                      sideCustomizations:
+                                          side.sideCustomizations,
+                                      maxSideCustomizations:
+                                          side.maxSideCustomizations ||
+                                          restaurant.defaultMaxSideCustomizations
+                                  }
+                              }),
+                        drinks: meal.drinks
+                            ? meal.drinks.map((drink) => {
+                                  return {
+                                      drink: drink.drink,
+                                      drinkCustomizations:
+                                          drink.drinkCustomizations,
+                                      maxDrinkCustomizations:
+                                          drink.maxDrinkCustomizations ||
+                                          restaurant.defaultMaxDrinkCustomizations
+                                  }
+                              })
+                            : restaurant.defaultDrinks.map((drink) => {
+                                  return {
+                                      drink: drink.drink,
+                                      drinkCustomizations:
+                                          drink.drinkCustomizations,
+                                      maxDrinkCustomizations:
+                                          drink.maxDrinkCustomizations ||
+                                          restaurant.defaultMaxDrinkCustomizations
+                                  }
+                              }),
                         sauces: meal.sauces || restaurant.defaultSauces,
                         maxSauces: meal.maxSauces || restaurant.defaultMaxSauces
                     }
