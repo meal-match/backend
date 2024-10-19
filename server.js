@@ -39,10 +39,7 @@ if (!dbUsername || !dbPassword || !clusterUrl) {
 const mongoUrl = `mongodb+srv://${dbUsername}:${dbPassword}@${clusterUrl}/${dbName}?retryWrites=true&w=majority`
 
 mongoose
-    .connect(mongoUrl, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-    })
+    .connect(mongoUrl)
     .then(() => {
         console.log('Connected to MongoDB')
     })
@@ -76,13 +73,17 @@ app.get('/', (req, res) => {
 
 // Include route files
 const authRoutes = require('./routes/authRoutes')
+const orderRoutes = require('./routes/orderRoutes')
 const paymentRoutes = require('./routes/paymentRoutes')
 const profileRoutes = require('./routes/profileRoutes')
+const restaurantRoutes = require('./routes/restaurantRoutes')
 
 // Use routes
 app.use('/auth', authRoutes)
+app.use('/orders', orderRoutes)
 app.use('/payment', paymentRoutes)
 app.use('/profile', profileRoutes)
+app.use('/restaurants', restaurantRoutes)
 
 // Catch-all route for undefined endpoints
 app.use((req, res) => {

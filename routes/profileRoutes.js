@@ -9,7 +9,7 @@ app.get('/', isAuthenticated, async (req, res) => {
     try {
         const user = await User.findById(
             req.session.userId,
-            'firstName lastName email paymentSetupIntent'
+            'firstName lastName email paymentSetupIntent openOrders'
         )
         if (!user) {
             return res.status(404).json({
