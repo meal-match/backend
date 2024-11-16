@@ -89,4 +89,4 @@ Follow [standard practices](https://dev.to/mrfrontend/git-101--step-2-add-stage-
 
 ### Merging
 
-When changes on your branch are ready to be merged into `main`, create a merge request. This request will need to be reviewed by 2 people before your changes can be merged.
+When changes on your branch are ready to be merged into `main`, create a merge request. This request will need to be reviewed by one other person before your changes can be merged.
