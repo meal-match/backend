@@ -28,6 +28,7 @@
     "devDependencies": {
         "eslint": "^8.57.0",
         "husky": "^8.0.0",
+        "lint-staged": "^15.2.10",
         "nodemon": "^3.1.4",
         "prettier": "^3.3.3",
         "prettier-eslint": "^16.3.0"
@@ -37,5 +38,9 @@
         "tabWidth": 4,
         "semi": false,
         "singleQuote": true
+    },
+    "lint-staged": {
+        "*.(js|jsx|json|yml|yaml|css|md|vue|mjs|ts|tsx)": "npx prettier --log-level silent --write",
+        "*.(js|jsx|ts|tsx)": "npx eslint"
     }
 }
