@@ -6,23 +6,16 @@ const User = require('../models/user')
 
 const app = express()
 
-app.post('/method', isAuthenticated, async (req, res) => {
-    const { paymentMethodID } = req.body
-
+app.get('/setup-init', isAuthenticated, async (req, res) => {
     try {
         const user = await User.findById(
             req.session.userId,
             'email paymentSetupIntent'
         )
-        if (!user) {
-            return res.status(404).json({
-                message: 'User not found'
-            })
-        }
 
-        if (!paymentMethodID) {
+        if (!user.paymentSetupIntent) {
             return res.status(400).json({
-                message: 'Required fields are missing'
+                message: 'Payment setup intent not found'
             })
         }
 
@@ -37,16 +30,65 @@ app.post('/method', isAuthenticated, async (req, res) => {
             })
         }
 
-        await stripeClient.paymentMethods.attach(paymentMethodID, {
-            customer: customer.id
-        })
+        const customerID = customer.data[0].id
 
-        user.paymentSetupIntent = null
-        await user.save()
+        const ephemeralKey = await stripeClient.ephemeralKeys.create(
+            { customer: customerID },
+            { apiVersion: '2024-06-20' }
+        )
 
         res.status(200).json({
-            message: 'Payment method added successfully'
+            paymentSetupIntent: user.paymentSetupIntent,
+            ephemeralKey: ephemeralKey.secret,
+            customer: customerID
         })
+    } catch (err) {
+        console.error(err)
+        res.status(500).json({
+            message: 'Internal server error'
+        })
+    }
+})
+
+app.delete('/setup-intent', isAuthenticated, async (req, res) => {
+    try {
+        const user = await User.findById(
+            req.session.userId,
+            'email paymentSetupIntent'
+        )
+        if (!user) {
+            return res.status(404).json({
+                message: 'User not found'
+            })
+        }
+
+        const customer = await stripeClient.customers.list({
+            email: user.email,
+            limit: 1
+        })
+
+        if (!customer.data.length) {
+            return res.status(400).json({
+                message: 'Customer does not exist'
+            })
+        }
+
+        const paymentMethods = await stripeClient.paymentMethods.list({
+            customer: customer.data[0].id
+        })
+
+        if (paymentMethods.data.length) {
+            user.paymentSetupIntent = null
+            await user.save()
+
+            res.status(200).json({
+                message: 'Payment method added successfully'
+            })
+        } else {
+            res.status(400).json({
+                message: 'No payment method found'
+            })
+        }
     } catch (err) {
         console.error(err)
         res.status(500).json({
