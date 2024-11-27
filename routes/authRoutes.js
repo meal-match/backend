@@ -34,7 +34,7 @@ app.post('/signup', async (req, res) => {
         const verificationToken = crypto.randomBytes(32).toString('hex')
 
         const stripeCustomer = await stripeClient.customers.create({
-            email,
+            email: email.toLowerCase(),
             name: `${firstName} ${lastName}`
         })
 
