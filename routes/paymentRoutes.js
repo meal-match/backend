@@ -6,7 +6,7 @@ const User = require('../models/user')
 
 const app = express()
 
-app.get('/setup-init', isAuthenticated, async (req, res) => {
+app.get('/setup-intent', isAuthenticated, async (req, res) => {
     try {
         const user = await User.findById(
             req.session.userId,
