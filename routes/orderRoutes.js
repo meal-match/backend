@@ -247,4 +247,30 @@ app.patch('/:id/unclaim', isAuthenticated, async (req, res) => {
     }
 })
 
+// Route to fetch open orders for a user
+app.get('/open', isAuthenticated, async (req, res) => {
+    try {
+        const userID = req.session.userId
+
+        const openOrders = await Order.find({
+            $or: [{ buyer: userID }, { seller: userID }]
+        }).lean()
+
+        res.status(200).json({
+            orders: openOrders.map((order) => {
+                const isBuy = order.buyer.toString() === userID
+                order.type = isBuy ? 'buy' : 'sell'
+                delete order.buyer
+                delete order.seller
+                return order
+            })
+        })
+    } catch (err) {
+        console.log(err)
+        res.status(500).json({
+            message: 'Internal server error'
+        })
+    }
+})
+
 module.exports = app
