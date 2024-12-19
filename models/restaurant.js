@@ -78,6 +78,39 @@ const MealSchema = new mongoose.Schema({
     }
 })
 
+const DailyHoursSchema = new mongoose.Schema(
+    {
+        open: {
+            type: String,
+            required: true
+        },
+        close: {
+            type: String,
+            required: true
+        }
+    },
+    { _id: false }
+)
+
+const hoursObject = {
+    type: DailyHoursSchema,
+    required: false,
+    default: undefined
+}
+
+const HoursSchema = new mongoose.Schema(
+    {
+        monday: hoursObject,
+        tuesday: hoursObject,
+        wednesday: hoursObject,
+        thursday: hoursObject,
+        friday: hoursObject,
+        saturday: hoursObject,
+        sunday: hoursObject
+    },
+    { _id: false }
+)
+
 const RestaurantSchema = new mongoose.Schema({
     restaurant: {
         type: String,
@@ -121,6 +154,11 @@ const RestaurantSchema = new mongoose.Schema({
         type: Number,
         required: true,
         default: 0
+    },
+    hours: {
+        type: HoursSchema,
+        required: true,
+        default: {}
     }
 })
 

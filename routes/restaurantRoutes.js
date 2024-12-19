@@ -65,7 +65,8 @@ app.get('/', isAuthenticated, async (req, res) => {
                         sauces: meal.sauces || restaurant.defaultSauces,
                         maxSauces: meal.maxSauces || restaurant.defaultMaxSauces
                     }
-                })
+                }),
+                hours: restaurant.hours
             }
         })
 
