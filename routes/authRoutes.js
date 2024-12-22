@@ -4,6 +4,7 @@ const express = require('express')
 const emailClient = require('../services/emailClient')
 const stripeClient = require('../services/stripeClient')
 const User = require('../models/user')
+const { isAuthenticated } = require('../utils/authUtils')
 
 const app = express()
 dotenv.config()
@@ -111,7 +112,7 @@ app.post('/login', async (req, res) => {
 })
 
 // Logout route
-app.post('/logout', (req, res) => {
+app.post('/logout', isAuthenticated, (req, res) => {
     req.session.destroy((err) => {
         if (err) {
             console.log(err)
