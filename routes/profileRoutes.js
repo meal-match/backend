@@ -1,10 +1,11 @@
 const express = require('express')
+const Order = require('../models/order')
 const User = require('../models/user')
 const { isAuthenticated } = require('../utils/authUtils')
 
 const app = express()
 
-// Profile route
+// Route to fetch profile data
 app.get('/', isAuthenticated, async (req, res) => {
     try {
         const user = await User.findById(
@@ -17,6 +18,37 @@ app.get('/', isAuthenticated, async (req, res) => {
             })
         }
         res.status(200).json({ ...user._doc }) // Return user profile data
+    } catch (err) {
+        console.log(err)
+        res.status(500).json({
+            message: 'Internal server error'
+        })
+    }
+})
+
+// Route to delete a user
+app.delete('/', isAuthenticated, async (req, res) => {
+    try {
+        const userID = req.session.userId
+
+        const openOrders = await Order.find({
+            $or: [{ buyer: userID }, { seller: userID }]
+        })
+        if (openOrders.length > 0) {
+            return res.status(400).json({
+                message: 'Cannot delete user with open orders'
+            })
+        }
+
+        const user = await User.findByIdAndDelete(userID)
+        if (!user) {
+            return res.status(404).json({
+                message: 'User not found'
+            })
+        }
+        res.status(200).json({
+            message: 'User deleted successfully'
+        })
     } catch (err) {
         console.log(err)
         res.status(500).json({
