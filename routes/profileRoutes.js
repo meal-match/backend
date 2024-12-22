@@ -31,6 +31,7 @@ app.delete('/', isAuthenticated, async (req, res) => {
     try {
         const userID = req.session.userId
 
+        // Check if user has open orders
         const openOrders = await Order.find({
             $or: [{ buyer: userID }, { seller: userID }]
         })
@@ -40,14 +41,27 @@ app.delete('/', isAuthenticated, async (req, res) => {
             })
         }
 
-        const user = await User.findByIdAndDelete(userID)
-        if (!user) {
-            return res.status(404).json({
-                message: 'User not found'
+        // Logout user
+        req.session.destroy(async (err) => {
+            if (err) {
+                console.log(err)
+                return res.status(500).json({
+                    message: 'Internal server error'
+                })
+            }
+
+            res.clearCookie('connect.sid')
+
+            // Delete user
+            const user = await User.findByIdAndDelete(userID)
+            if (!user) {
+                return res.status(404).json({
+                    message: 'User not found'
+                })
+            }
+            res.status(200).json({
+                message: 'User deleted successfully'
             })
-        }
-        res.status(200).json({
-            message: 'User deleted successfully'
         })
     } catch (err) {
         console.log(err)
