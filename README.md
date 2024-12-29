@@ -31,6 +31,8 @@ Install the following required VSCode extensions.
 -   ESLint
 -   Prettier
 -   Prettier ESLint
+-   Biome
+-   SonarQube
 
 Optionally, install the following recommended VSCode extensions.
 

@@ -260,8 +260,8 @@ app.get('/open', isAuthenticated, async (req, res) => {
             orders: openOrders.map((order) => {
                 const isBuy = order.buyer.toString() === userID
                 order.type = isBuy ? 'buy' : 'sell'
-                delete order.buyer
-                delete order.seller
+                order.buyer = undefined
+                order.seller = undefined
                 return order
             })
         })

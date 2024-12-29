@@ -5,5 +5,8 @@
     "editor.formatOnSave": true,
     "editor.formatOnSaveMode": "file",
     "files.autoSave": "onFocusChange",
-    "vs-code-prettier-eslint.prettierLast": false // set as "true" to run 'prettier' last not first
+    "vs-code-prettier-eslint.prettierLast": false,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports.biome": "explicit"
+    }
 }

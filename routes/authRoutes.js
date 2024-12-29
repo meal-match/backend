@@ -1,4 +1,4 @@
-const crypto = require('crypto')
+const crypto = require('node:crypto')
 const dotenv = require('dotenv')
 const express = require('express')
 const emailClient = require('../services/emailClient')
@@ -34,17 +34,10 @@ app.post('/signup', async (req, res) => {
         const isVerified = process.env.ENVIRONMENT === 'dev' // Automatically verify user in dev environment
         const verificationToken = crypto.randomBytes(32).toString('hex')
 
-        const stripeCustomer = await stripeClient.customers.create({
+        await stripeClient.customers.create({
             email: email.toLowerCase(),
             name: `${firstName} ${lastName}`
         })
-
-        const setupIntent = await stripeClient.setupIntents.create({
-            customer: stripeCustomer.id,
-            payment_method_types: ['card']
-        })
-
-        const paymentSetupIntent = setupIntent.client_secret
 
         await User.create({
             email,
@@ -52,8 +45,7 @@ app.post('/signup', async (req, res) => {
             firstName,
             lastName,
             isVerified,
-            verificationToken,
-            paymentSetupIntent
+            verificationToken
         })
 
         await sendVerificationEmail(email, verificationToken)
