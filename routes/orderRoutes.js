@@ -123,7 +123,7 @@ app.delete('/:id/cancel-buy', isAuthenticated, async (req, res) => {
             await Order.findByIdAndDelete(id)
 
             user.openOrders = user.openOrders.filter(
-                (order) => order.id.toString() !== id || order.type !== 'buy'
+                (order) => order.id.toString() !== id
             )
             await user.save()
 
