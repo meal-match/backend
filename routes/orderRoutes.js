@@ -282,6 +282,7 @@ app.patch('/:id/confirm', isAuthenticated, async (req, res) => {
         }
         order.status = 'Confirmed'
         order.readyTime = readyTime
+        order.confirmationTime = new Date()
         await order.save()
         res.status(200).json({
             message: 'Order confirmed successfully'

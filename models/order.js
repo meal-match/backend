@@ -66,6 +66,10 @@ const OrderSchema = new mongoose.Schema({
             /^(0?[1-9]|1[0-2]):[0-5][0-9]\s?[APap][Mm]$/,
             'Invalid time format. Use "9:34 AM" or "11:57 PM".'
         ]
+    },
+    confirmationTime: {
+        type: Date,
+        required: false
     }
 })
 
