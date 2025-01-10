@@ -1,10 +1,25 @@
 const bcrypt = require('bcrypt')
 const mongoose = require('mongoose')
 
-const OrderSchema = new mongoose.Schema({
-    id: { type: mongoose.Schema.Types.ObjectId, ref: 'Order', required: true },
-    type: { type: String, required: true }
-})
+const OrderSchema = new mongoose.Schema(
+    {
+        id: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Order',
+            required: true
+        },
+        type: { type: String, required: true }
+    },
+    { _id: false }
+)
+
+const PaymentMethodSchema = new mongoose.Schema(
+    {
+        id: { type: String, required: true },
+        default: { type: Boolean, required: true }
+    },
+    { _id: false }
+)
 
 const UserSchema = new mongoose.Schema({
     email: {
@@ -22,7 +37,7 @@ const UserSchema = new mongoose.Schema({
         required: true,
         minlength: 8,
         validate: {
-            validator: function (v) {
+            validator: (v) => {
                 // Regular expression for the password criteria:
                 // - At least one digit
                 // - At least one lowercase letter
@@ -33,7 +48,8 @@ const UserSchema = new mongoose.Schema({
                     v
                 )
             },
-            message: `Password must be at least 8 characters long and include at least one number, one uppercase letter, one lowercase letter, and one special character (! @ # $ % ^ & *).`
+            message:
+                'Password must be at least 8 characters long and include at least one number, one uppercase letter, one lowercase letter, and one special character (! @ # $ % ^ & *).'
         }
     },
     firstName: {
@@ -52,7 +68,8 @@ const UserSchema = new mongoose.Schema({
     resetPasswordToken: String, // Store the reset token
     resetPasswordExpires: Date, // Expiry time for the reset token
     openOrders: [OrderSchema], // Array of open orders
-    paymentSetupIntent: String // Store the stripe payment setup intent
+    paymentSetupIntent: String, // Store the stripe payment setup intent
+    paymentMethods: [PaymentMethodSchema] // Array of payment methods
 })
 
 // Hash the password before saving the user document
