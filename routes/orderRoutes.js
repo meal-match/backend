@@ -247,8 +247,9 @@ app.patch('/:id/unclaim', isAuthenticated, async (req, res) => {
     }
 })
 
-app.patch('/confirm', isAuthenticated, async (req, res) => {
+app.patch('/:id/confirm', isAuthenticated, async (req, res) => {
     const { id } = req.params
+    const { readyTime } = req.query
     try {
         const order = await Order.findById(id)
         if (!order) {
@@ -265,7 +266,8 @@ app.patch('/confirm', isAuthenticated, async (req, res) => {
         }
         if (order.status !== 'Claimed') {
             return res.status(400).json({
-                message: 'Order cannot be unclaimed'
+                message:
+                    'Order is not claimed and can therefore not be confirmed'
             })
         }
         if (order.seller.toString() !== req.session.userId) {
@@ -273,7 +275,13 @@ app.patch('/confirm', isAuthenticated, async (req, res) => {
                 message: 'Unauthorized'
             })
         }
+        if (!/^(0?[1-9]|1[0-2]):[0-5][0-9]\s?[APap][Mm]$/.test(readyTime)) {
+            return res.status(400).json({
+                message: 'Invalid ready time format'
+            })
+        }
         order.status = 'Confirmed'
+        order.readyTime = readyTime
         await order.save()
         res.status(200).json({
             message: 'Order confirmed successfully'
