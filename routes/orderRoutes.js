@@ -123,7 +123,7 @@ app.delete('/:id/cancel-buy', isAuthenticated, async (req, res) => {
             await Order.findByIdAndDelete(id)
 
             user.openOrders = user.openOrders.filter(
-                (order) => order.id.toString() !== id
+                (order) => order.id.toString() !== id || order.type !== 'buy'
             )
             await user.save()
 
@@ -172,6 +172,7 @@ app.patch('/:id/claim', isAuthenticated, async (req, res) => {
 
             order.status = 'Claimed'
             order.seller = req.session.userId
+            order.claimTime = new Date()
             await order.save()
 
             user.openOrders.push({
@@ -229,6 +230,7 @@ app.patch('/:id/unclaim', isAuthenticated, async (req, res) => {
 
         order.status = 'Pending'
         order.seller = null
+        order.claimTime = null
         await order.save()
 
         user.openOrders = user.openOrders.filter(

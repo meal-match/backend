@@ -58,6 +58,10 @@ const OrderSchema = new mongoose.Schema({
         type: String,
         required: true,
         default: 'Pending'
+    },
+    claimTime: {
+        type: Date,
+        required: false
     }
 })
 
