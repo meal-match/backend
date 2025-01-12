@@ -59,6 +59,18 @@ const OrderSchema = new mongoose.Schema({
         required: true,
         default: 'Pending'
     },
+    readyTime: {
+        type: String,
+        required: false,
+        match: [
+            /^(0?[1-9]|1[0-2]):[0-5]\d\s?[APap][Mm]$/,
+            'Invalid time format. Use "9:34 AM" or "11:57 PM".'
+        ]
+    },
+    confirmationTime: {
+        type: Date,
+        required: false
+    },
     claimTime: {
         type: Date,
         required: false

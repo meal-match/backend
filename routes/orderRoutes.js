@@ -249,6 +249,64 @@ app.patch('/:id/unclaim', isAuthenticated, async (req, res) => {
     }
 })
 
+app.patch('/:id/confirm', isAuthenticated, async (req, res) => {
+    const { id } = req.params
+    // TODO: we also need to receive and save the receipt
+    const { readyTime } = req.body
+
+    try {
+        const order = await Order.findById(id)
+        if (!order) {
+            return res.status(404).json({
+                message: 'Order not found'
+            })
+        }
+
+        const user = await User.findById(req.session.userId, 'openOrders')
+        if (!user) {
+            return res.status(404).json({
+                status: 404,
+                message: 'User not found'
+            })
+        }
+
+        if (order.status !== 'Claimed') {
+            return res.status(400).json({
+                message:
+                    'Order is not claimed and can therefore not be confirmed'
+            })
+        }
+
+        if (order.seller.toString() !== req.session.userId) {
+            return res.status(401).json({
+                message: 'Unauthorized'
+            })
+        }
+
+        if (!/^(0?[1-9]|1[0-2]):[0-5]\d\s?[APap][Mm]$/.test(readyTime)) {
+            return res.status(400).json({
+                message: 'Invalid ready time format'
+            })
+        }
+
+        order.status = 'Confirmed'
+        order.readyTime = readyTime
+        order.confirmationTime = new Date()
+        await order.save()
+
+        // TODO: send push notification to buyer
+
+        res.status(200).json({
+            message: 'Order confirmed successfully'
+        })
+    } catch (err) {
+        console.log(err)
+        res.status(500).json({
+            message: 'Internal server error'
+        })
+    }
+})
+
 // Route to fetch open orders for a user
 app.get('/open', isAuthenticated, async (req, res) => {
     try {
