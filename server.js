@@ -42,6 +42,15 @@ mongoose
     .connect(mongoUrl)
     .then(() => {
         console.log('Connected to MongoDB')
+
+        // Load intervals
+        const intervals = require('./services/intervalClient')
+
+        // Check for unclaimed orders every minute
+        setInterval(intervals.deleteUnclaimedOrders, 60 * 1000)
+
+        // Check for seller timeouts every minute
+        setInterval(intervals.sellerTimeout, 60 * 1000)
     })
     .catch((err) => {
         console.log('Error connecting to MongoDB', err)

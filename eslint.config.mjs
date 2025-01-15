@@ -13,7 +13,8 @@ export default [
                 process: 'readonly',
                 Buffer: 'readonly',
                 console: 'readonly',
-                exports: 'readonly'
+                exports: 'readonly',
+                setInterval: 'readonly'
             }
         },
         rules: {
