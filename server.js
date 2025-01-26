@@ -75,6 +75,7 @@ app.get('/', (req, res) => {
 const authRoutes = require('./routes/authRoutes')
 const orderRoutes = require('./routes/orderRoutes')
 const paymentRoutes = require('./routes/paymentRoutes')
+const payoutRoutes = require('./routes/payoutRoutes')
 const profileRoutes = require('./routes/profileRoutes')
 const restaurantRoutes = require('./routes/restaurantRoutes')
 
@@ -82,6 +83,7 @@ const restaurantRoutes = require('./routes/restaurantRoutes')
 app.use('/auth', authRoutes)
 app.use('/orders', orderRoutes)
 app.use('/payment', paymentRoutes)
+app.use('/payout', payoutRoutes)
 app.use('/profile', profileRoutes)
 app.use('/restaurants', restaurantRoutes)
 

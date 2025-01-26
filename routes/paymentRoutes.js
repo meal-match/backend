@@ -6,27 +6,7 @@ const User = require('../models/user')
 
 const app = express()
 
-const fetchPaymentMethods = async (user) => {
-    const customers = await stripeClient.customers.list({
-        email: user.email,
-        limit: 1
-    })
-    if (!customers.data.length) {
-        return []
-    }
-
-    const paymentMethods = await stripeClient.paymentMethods.list({
-        customer: customers.data[0].id
-    })
-    const defaultPaymentMethod = user.paymentMethods.find((pm) => pm.default)
-    for (const method of paymentMethods.data) {
-        method.default = method.id === defaultPaymentMethod?.id
-    }
-
-    return paymentMethods.data
-}
-
-// Route to create a payment method by fetching or creating a payment setup intent
+// Route to save a payment method by fetching or creating a payment setup intent
 app.get('/setup-intent', isAuthenticated, async (req, res) => {
     try {
         const user = await User.findById(
@@ -111,6 +91,7 @@ app.delete('/setup-intent', isAuthenticated, async (req, res) => {
         if (stripePaymentMethods.data.length) {
             const newMethod = stripePaymentMethods.data.filter(
                 (method) =>
+                    method.type === 'card' &&
                     !user.paymentMethods.find((pm) => pm.id === method.id)
             )
             let message = 'No new payment method found'
@@ -118,14 +99,29 @@ app.delete('/setup-intent', isAuthenticated, async (req, res) => {
             if (newMethod.length) {
                 user.paymentSetupIntent = null
                 user.paymentMethods.push({
-                    id: stripePaymentMethods.data[0].id,
+                    id: newMethod[0].id,
                     default: isDefault || false
                 })
                 await user.save()
                 message = 'Payment method added successfully'
+            } else {
+                const removedMethod = user.paymentMethods.filter(
+                    (pm) =>
+                        !stripePaymentMethods.data.find(
+                            (method) => method.id === pm.id
+                        )
+                )
+                if (removedMethod.length) {
+                    user.paymentMethods = user.paymentMethods.filter(
+                        (pm) =>
+                            !removedMethod.find((method) => method.id === pm.id)
+                    )
+                    await user.save()
+                    message = 'Payment method removed successfully'
+                }
             }
 
-            const paymentMethods = await fetchPaymentMethods(user)
+            const paymentMethods = await stripeClient.fetchPaymentMethods(user)
 
             res.status(200).json({
                 message,
@@ -149,7 +145,7 @@ app.get('/customer', isAuthenticated, async (req, res) => {
     try {
         const user = await User.findById(
             req.session.userId,
-            'email paymentSetupIntent paymentMethods'
+            'email paymentSetupIntent payoutSetupIntent paymentMethods payoutMethods'
         )
         if (!user) {
             return res.status(404).json({
@@ -167,12 +163,15 @@ app.get('/customer', isAuthenticated, async (req, res) => {
             })
         }
 
-        const paymentMethods = await fetchPaymentMethods(user)
+        const paymentMethods = await stripeClient.fetchPaymentMethods(user)
+        const payoutMethods = await stripeClient.fetchPayoutMethods(user)
 
         res.status(200).json({
             customer: customers.data[0],
             paymentMethods,
-            paymentSetupIntent: user.paymentSetupIntent
+            payoutMethods,
+            paymentSetupIntent: user.paymentSetupIntent,
+            payoutSetupIntent: user.payoutSetupIntent
         })
     } catch (err) {
         console.error(err)
@@ -210,7 +209,7 @@ app.patch('/default-method/:id', isAuthenticated, async (req, res) => {
         paymentMethod.default = true
         await user.save()
 
-        const paymentMethods = await fetchPaymentMethods(user)
+        const paymentMethods = await stripeClient.fetchPaymentMethods(user)
 
         res.status(200).json({
             message: 'Default payment method updated successfully',
@@ -249,7 +248,7 @@ app.delete('/:id', isAuthenticated, async (req, res) => {
         user.paymentMethods = user.paymentMethods.filter((pm) => pm.id !== id)
         await user.save()
 
-        const paymentMethods = await fetchPaymentMethods(user)
+        const paymentMethods = await stripeClient.fetchPaymentMethods(user)
 
         res.status(200).json({
             message: 'Payment method deleted successfully',
