@@ -77,7 +77,8 @@ const UserSchema = new mongoose.Schema({
     resetPasswordExpires: Date, // Expiry time for the reset token
     openOrders: [OrderSchema], // Array of open orders
     paymentSetupIntent: String, // Store the stripe payment setup intent
-    payoutSetupIntent: String // Store the stripe payout setup intent
+    payoutSetupIntent: String, // Store the stripe payout setup intent
+    pushToken: String // Store the push notification token from the frontend
 })
 
 // Hash the password before saving the user document
