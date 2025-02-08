@@ -14,7 +14,7 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
     cloudinary,
     params: {
-        folder: 'uploads', // Folder in Cloudinary
+        folder: process.env.CLOUDINARY_FOLDER, // Folder in Cloudinary
         // eslint-disable-next-line no-unused-vars
         format: async (_req, _file) => 'png',
         public_id: (_req, file) => `${Date.now()}-${file.originalname}`
