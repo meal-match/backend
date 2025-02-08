@@ -393,6 +393,9 @@ app.patch('/:id/dispute', isAuthenticated, async (req, res) => {
             })
         }
 
+        // TODO: send email to seller
+        // TODO: send email to admin
+
         order.status = 'Disputed'
         order.disputeTime = new Date()
         order.disputeReason = reason
