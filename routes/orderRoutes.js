@@ -380,6 +380,19 @@ app.patch('/:id/dispute', isAuthenticated, async (req, res) => {
             })
         }
 
+        // Send notification to seller
+        const seller = await User.findById(order.seller.toString(), 'pushToken')
+        if (seller?.pushToken) {
+            expoClient.queueNotification({
+                to: seller.pushToken,
+                title: 'Order Disputed',
+                body: `Your order from ${order.restaurant} has been disputed by the buyer. We will review the issue and get back to you soon. Your payment will be held until the issue is resolved.`,
+                data: {
+                    route: `/openOrders/${order._id}`
+                }
+            })
+        }
+
         order.status = 'Disputed'
         order.disputeTime = new Date()
         order.disputeReason = reason
