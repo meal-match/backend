@@ -2,6 +2,7 @@ const express = require('express')
 const Order = require('../models/order')
 const User = require('../models/user')
 const { isAuthenticated } = require('../utils/authUtils')
+const expoClient = require('../services/expoClient')
 
 const app = express()
 
@@ -118,8 +119,6 @@ app.delete('/:id/cancel-buy', isAuthenticated, async (req, res) => {
         }
 
         if (order.status === 'Pending') {
-            // TODO: refund user
-
             await Order.findByIdAndDelete(id)
 
             user.openOrders = user.openOrders.filter(
@@ -131,7 +130,7 @@ app.delete('/:id/cancel-buy', isAuthenticated, async (req, res) => {
                 message: 'Order cancelled successfully'
             })
         } else {
-            // TODO: potentially allow cancelling orders that are not pending
+            // TODO: potentially allow cancelling orders that are neither pending nor confirmed
             return res.status(400).json({
                 message: 'Order cannot be cancelled'
             })
@@ -294,7 +293,19 @@ app.patch('/:id/confirm', isAuthenticated, async (req, res) => {
         order.confirmationTime = new Date()
         await order.save()
 
-        // TODO: send push notification to buyer
+        const buyer = await User.findById(order.buyer.toString(), 'pushToken')
+        if (buyer?.pushToken) {
+            expoClient.queueNotification({
+                to: buyer.pushToken,
+                title: 'Order Confirmed',
+                body: `Your order from ${order.restaurant} is confirmed and will be ready at ${readyTime}!`,
+                data: {
+                    route: `/openOrders/${order._id}`
+                }
+            })
+        }
+
+        // TODO: bill the buyer
 
         res.status(200).json({
             message: 'Order confirmed successfully'

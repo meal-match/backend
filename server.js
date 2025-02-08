@@ -51,6 +51,9 @@ mongoose
 
         // Check for seller timeouts every minute
         setInterval(intervals.sellerTimeout, 60 * 1000)
+
+        // Check for queued notifications every ten seconds
+        setInterval(intervals.sendNotifications, 10 * 1000)
     })
     .catch((err) => {
         console.log('Error connecting to MongoDB', err)
@@ -86,6 +89,7 @@ const orderRoutes = require('./routes/orderRoutes')
 const paymentRoutes = require('./routes/paymentRoutes')
 const payoutRoutes = require('./routes/payoutRoutes')
 const profileRoutes = require('./routes/profileRoutes')
+const pushTokenRoutes = require('./routes/pushTokenRoutes')
 const restaurantRoutes = require('./routes/restaurantRoutes')
 
 // Use routes
@@ -94,6 +98,7 @@ app.use('/orders', orderRoutes)
 app.use('/payment', paymentRoutes)
 app.use('/payout', payoutRoutes)
 app.use('/profile', profileRoutes)
+app.use('/push-token', pushTokenRoutes)
 app.use('/restaurants', restaurantRoutes)
 
 // Catch-all route for undefined endpoints

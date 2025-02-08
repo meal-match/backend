@@ -1,5 +1,6 @@
 const Order = require('../models/order')
 const User = require('../models/user')
+const expoClient = require('./expoClient')
 
 const intervals = {}
 
@@ -20,7 +21,10 @@ intervals.deleteUnclaimedOrders = async () => {
                 await Order.findByIdAndDelete(order._id)
 
                 // Update user
-                const user = await User.findById(order.buyer)
+                const user = await User.findById(
+                    order.buyer,
+                    'openOrders pushToken'
+                )
                 if (user) {
                     user.openOrders = user.openOrders.filter(
                         (openOrder) =>
@@ -28,9 +32,15 @@ intervals.deleteUnclaimedOrders = async () => {
                             openOrder.type !== 'buy'
                     )
                     await user.save()
-                }
 
-                // TODO: notify the user that their order was deleted
+                    if (user.pushToken) {
+                        expoClient.queueNotification({
+                            to: user.pushToken,
+                            title: 'Order Deleted',
+                            body: 'Your order was deleted due to inactivity.'
+                        })
+                    }
+                }
 
                 deletionCount++
             }
@@ -65,7 +75,10 @@ intervals.sellerTimeout = async () => {
             ) {
                 // Update seller's open orders
                 const sellerID = order.seller
-                const seller = await User.findById(sellerID)
+                const seller = await User.findById(
+                    sellerID,
+                    'openOrders pushToken'
+                )
                 if (seller) {
                     seller.openOrders = seller.openOrders.filter(
                         (openOrder) =>
@@ -73,14 +86,20 @@ intervals.sellerTimeout = async () => {
                             openOrder.type !== 'sell'
                     )
                     await seller.save()
+
+                    if (seller.pushToken) {
+                        expoClient.queueNotification({
+                            to: seller.pushToken,
+                            title: 'Order Unclaimed',
+                            body: 'Your order was unclaimed due to inactivity.'
+                        })
+                    }
                 }
 
                 // Update order
                 order.status = 'Pending'
                 order.seller = null
                 await order.save()
-
-                // TODO: notify the seller that their order was unclaimed due to timeout
 
                 timeoutCount++
             }
@@ -95,6 +114,14 @@ intervals.sellerTimeout = async () => {
 
     if (timeoutCount > 0) {
         console.log(`Unclaimed ${timeoutCount} orders`)
+    }
+}
+
+intervals.sendNotifications = async () => {
+    const notificationCount = expoClient.notificationQueue.length
+    if (notificationCount > 0) {
+        await expoClient.sendQueuedNotifications()
+        console.log(`Sent ${notificationCount} notifications`)
     }
 }
 
