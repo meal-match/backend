@@ -343,6 +343,59 @@ app.patch(
     }
 )
 
+app.patch('/:id/dispute', isAuthenticated, async (req, res) => {
+    const { id } = req.params
+    const { reason } = req.body
+    try {
+        const order = await Order.findById(id)
+        if (!order) {
+            return res.status(404).json({
+                message: 'Order not found'
+            })
+        }
+
+        if (!reason) {
+            return res.status(400).json({
+                message: 'Dispute reason is required'
+            })
+        }
+
+        const user = await User.findById(req.session.userId, 'openOrders')
+        if (!user) {
+            return res.status(404).json({
+                status: 404,
+                message: 'User not found'
+            })
+        }
+
+        if (order.status !== 'Confirmed') {
+            return res.status(400).json({
+                message: 'Order must be confirmed to be disputed'
+            })
+        }
+
+        if (order.buyer.toString() !== req.session.userId) {
+            return res.status(401).json({
+                message: 'You must be the buyer to dispute an order'
+            })
+        }
+
+        order.status = 'Disputed'
+        order.disputeTime = new Date()
+        order.disputeReason = reason
+        await order.save()
+
+        res.status(200).json({
+            message: 'Order disputed successfully'
+        })
+    } catch (err) {
+        console.log(err)
+        res.status(500).json({
+            message: 'Internal server error'
+        })
+    }
+})
+
 // Route to fetch open orders for a user
 app.get('/open', isAuthenticated, async (req, res) => {
     try {
