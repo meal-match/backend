@@ -75,6 +75,10 @@ const OrderSchema = new mongoose.Schema({
         type: Date,
         required: false
     },
+    completionTime: {
+        type: Date,
+        required: false
+    },
     receiptImage: {
         type: String,
         required: false

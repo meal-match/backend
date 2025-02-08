@@ -21,6 +21,27 @@ const storage = new CloudinaryStorage({
     }
 })
 
+const deleteImageFromCloudinary = async (imageUrl) => {
+    if (!imageUrl) {
+        return
+    }
+
+    // Extract public_id from Cloudinary URL
+    const parts = imageUrl.split('/')
+    const filename = parts[parts.length - 1] // Get filename
+    const publicId =
+        process.env.CLOUDINARY_FOLDER +
+        '/' +
+        filename.substring(0, filename.lastIndexOf('.')) // Remove extension
+
+    try {
+        await cloudinary.uploader.destroy(publicId)
+        console.log(`Deleted image: ${publicId}`)
+    } catch (err) {
+        console.error('Error deleting image from Cloudinary:', err)
+    }
+}
+
 const upload = multer({ storage })
 
-module.exports = { cloudinary, upload }
+module.exports = { cloudinary, upload, deleteImageFromCloudinary }

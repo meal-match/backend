@@ -2,30 +2,9 @@ require('dotenv').config()
 const Order = require('../models/order')
 const User = require('../models/user')
 const expoClient = require('./expoClient')
-const { cloudinary } = require('./cloudinaryClient')
+const { deleteImageFromCloudinary } = require('./cloudinaryClient')
 
 const intervals = {}
-
-const deleteImageFromCloudinary = async (imageUrl) => {
-    if (!imageUrl) {
-        return
-    }
-
-    // Extract public_id from Cloudinary URL
-    const parts = imageUrl.split('/')
-    const filename = parts[parts.length - 1] // Get filename
-    const publicId =
-        process.env.CLOUDINARY_FOLDER +
-        '/' +
-        filename.substring(0, filename.lastIndexOf('.')) // Remove extension
-
-    try {
-        await cloudinary.uploader.destroy(publicId)
-        console.log(`Deleted image: ${publicId}`)
-    } catch (err) {
-        console.error('Error deleting image from Cloudinary:', err)
-    }
-}
 
 intervals.deleteUnclaimedOrders = async () => {
     // Loop through orders
@@ -193,7 +172,7 @@ intervals.completeOrders = async () => {
                         expoClient.queueNotification({
                             to: seller.pushToken,
                             title: 'Order Completed',
-                            body: 'Your order was completed.'
+                            body: 'Your sale was completed. You should receive payment soon.'
                         })
                     }
                 }
@@ -203,6 +182,7 @@ intervals.completeOrders = async () => {
 
                 // Update order
                 order.status = 'Completed'
+                order.completionTime = new Date()
                 await order.save()
 
                 completionCount++
