@@ -42,6 +42,10 @@ const deleteImageFromCloudinary = async (imageUrl) => {
     }
 }
 
-const upload = multer({ storage })
+const uploadImageToCloudinary = multer({ storage })
 
-module.exports = { cloudinary, upload, deleteImageFromCloudinary }
+module.exports = {
+    cloudinary,
+    uploadImageToCloudinary,
+    deleteImageFromCloudinary
+}

@@ -1,6 +1,6 @@
 const express = require('express')
 const Order = require('../models/order')
-const { upload } = require('../services/cloudinaryClient')
+const { uploadImageToCloudinary } = require('../services/cloudinaryClient')
 const User = require('../models/user')
 const { isAuthenticated } = require('../utils/authUtils')
 const expoClient = require('../services/expoClient')
@@ -251,7 +251,7 @@ app.patch('/:id/unclaim', isAuthenticated, async (req, res) => {
 
 app.patch(
     '/:id/confirm',
-    upload.single('receipt'),
+    uploadImageToCloudinary.single('receipt'),
     isAuthenticated,
     async (req, res) => {
         const { id } = req.params
