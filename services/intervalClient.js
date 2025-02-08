@@ -1,4 +1,3 @@
-require('dotenv').config()
 const Order = require('../models/order')
 const User = require('../models/user')
 const expoClient = require('./expoClient')
