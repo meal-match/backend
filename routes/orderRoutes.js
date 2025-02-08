@@ -1,5 +1,6 @@
 const express = require('express')
 const Order = require('../models/order')
+const { uploadImageToCloudinary } = require('../services/cloudinaryClient')
 const User = require('../models/user')
 const { isAuthenticated } = require('../utils/authUtils')
 const expoClient = require('../services/expoClient')
@@ -248,75 +249,99 @@ app.patch('/:id/unclaim', isAuthenticated, async (req, res) => {
     }
 })
 
-app.patch('/:id/confirm', isAuthenticated, async (req, res) => {
-    const { id } = req.params
-    // TODO: we also need to receive and save the receipt
-    const { readyTime } = req.body
+app.patch(
+    '/:id/confirm',
+    uploadImageToCloudinary.single('receipt'),
+    isAuthenticated,
+    async (req, res) => {
+        const { id } = req.params
+        const { readyTime } = req.body
 
-    try {
-        const order = await Order.findById(id)
-        if (!order) {
-            return res.status(404).json({
-                message: 'Order not found'
+        try {
+            const order = await Order.findById(id)
+            if (!order) {
+                return res.status(404).json({
+                    message: 'Order not found'
+                })
+            }
+
+            const user = await User.findById(req.session.userId, 'openOrders')
+            if (!user) {
+                return res.status(404).json({
+                    status: 404,
+                    message: 'User not found'
+                })
+            }
+
+            if (order.status !== 'Claimed') {
+                return res.status(400).json({
+                    message:
+                        'Order is not claimed and can therefore not be confirmed'
+                })
+            }
+
+            if (order.seller.toString() !== req.session.userId) {
+                return res.status(401).json({
+                    message: 'Unauthorized'
+                })
+            }
+
+            if (!/^(0?[1-9]|1[0-2]):[0-5]\d\s?[APap][Mm]$/.test(readyTime)) {
+                return res.status(400).json({
+                    message: 'Invalid ready time format'
+                })
+            }
+
+            // Validate that an image was uploaded
+            if (!req.file) {
+                return res
+                    .status(400)
+                    .json({ message: 'Receipt image is required' })
+            }
+
+            // Validate image format (only PNG for now)
+            const allowedFormats = ['image/png']
+            if (!allowedFormats.includes(req.file.mimetype)) {
+                return res.status(400).json({
+                    message: 'Invalid image format. PNG is allowed.'
+                })
+            }
+
+            order.status = 'Confirmed'
+            order.readyTime = readyTime
+            order.confirmationTime = new Date()
+            order.receiptImage = req.file.path
+
+            await order.save()
+
+            const buyer = await User.findById(
+                order.buyer.toString(),
+                'pushToken'
+            )
+            if (buyer?.pushToken) {
+                expoClient.queueNotification({
+                    to: buyer.pushToken,
+                    title: 'Order Confirmed',
+                    body: `Your order from ${order.restaurant} is confirmed and will be ready at ${readyTime}!`,
+                    data: {
+                        route: `/openOrders/${order._id}`
+                    }
+                })
+            }
+
+            // TODO: bill the buyer
+
+            res.status(200).json({
+                message: 'Order confirmed successfully'
+            })
+        } catch (err) {
+            console.log(err)
+            res.status(500).json({
+                message: 'Internal server error'
             })
         }
-
-        const user = await User.findById(req.session.userId, 'openOrders')
-        if (!user) {
-            return res.status(404).json({
-                status: 404,
-                message: 'User not found'
-            })
-        }
-
-        if (order.status !== 'Claimed') {
-            return res.status(400).json({
-                message:
-                    'Order is not claimed and can therefore not be confirmed'
-            })
-        }
-
-        if (order.seller.toString() !== req.session.userId) {
-            return res.status(401).json({
-                message: 'Unauthorized'
-            })
-        }
-
-        if (!/^(0?[1-9]|1[0-2]):[0-5]\d\s?[APap][Mm]$/.test(readyTime)) {
-            return res.status(400).json({
-                message: 'Invalid ready time format'
-            })
-        }
-
-        order.status = 'Confirmed'
-        order.readyTime = readyTime
-        order.confirmationTime = new Date()
-        await order.save()
-
-        const buyer = await User.findById(order.buyer.toString(), 'pushToken')
-        if (buyer?.pushToken) {
-            expoClient.queueNotification({
-                to: buyer.pushToken,
-                title: 'Order Confirmed',
-                body: `Your order from ${order.restaurant} is confirmed and will be ready at ${readyTime}!`,
-                data: {
-                    route: `/openOrders/${order._id}`
-                }
-            })
-        }
-
-        // TODO: bill the buyer
-
-        res.status(200).json({
-            message: 'Order confirmed successfully'
-        })
-    } catch (err) {
-        console.log(err)
-        res.status(500).json({
-            message: 'Internal server error'
-        })
     }
-})
+)
 
 // Route to fetch open orders for a user
 app.get('/open', isAuthenticated, async (req, res) => {
