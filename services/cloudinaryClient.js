@@ -1,7 +1,9 @@
-require('dotenv').config()
+const dotenv = require('dotenv')
 const { v2: cloudinary } = require('cloudinary')
 const { CloudinaryStorage } = require('multer-storage-cloudinary')
 const multer = require('multer')
+
+dotenv.config()
 
 // Configure Cloudinary
 cloudinary.config({
@@ -29,10 +31,7 @@ const deleteImageFromCloudinary = async (imageUrl) => {
     // Extract public_id from Cloudinary URL
     const parts = imageUrl.split('/')
     const filename = parts[parts.length - 1] // Get filename
-    const publicId =
-        process.env.CLOUDINARY_FOLDER +
-        '/' +
-        filename.substring(0, filename.lastIndexOf('.')) // Remove extension
+    const publicId = `${process.env.CLOUDINARY_FOLDER}/${filename.substring(0, filename.lastIndexOf('.'))}` // Remove extension
 
     try {
         await cloudinary.uploader.destroy(publicId)

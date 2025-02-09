@@ -5,6 +5,17 @@ dotenv.config()
 
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY)
 
+stripe.fetchCustomer = async (email) => {
+    const customers = await stripe.customers.list({
+        email,
+        limit: 1
+    })
+    if (!customers.data.length) {
+        return null
+    }
+    return customers.data[0]
+}
+
 stripe.fetchPaymentMethods = async (user) => {
     const customers = await stripe.customers.list({
         email: user.email,
@@ -26,25 +37,43 @@ stripe.fetchPaymentMethods = async (user) => {
     return paymentMethods.data
 }
 
-stripe.fetchPayoutMethods = async (user) => {
+stripe.fetchDefaultPaymentMethod = async (user) => {
     const customers = await stripe.customers.list({
         email: user.email,
         limit: 1
     })
     if (!customers.data.length) {
-        return []
+        return null
     }
 
-    const payoutMethods = await stripe.paymentMethods.list({
+    const paymentMethods = await stripe.paymentMethods.list({
         customer: customers.data[0].id,
-        type: 'us_bank_account'
+        type: 'card'
     })
-    const defaultPayoutMethod = user.payoutMethods.find((pm) => pm.default)
-    for (const method of payoutMethods.data) {
-        method.default = method.id === defaultPayoutMethod?.id
+    if (!paymentMethods.data.length) {
+        return null
     }
 
-    return payoutMethods.data
+    const defaultPaymentMethod = user.paymentMethods.find((pm) => pm.default)
+    if (defaultPaymentMethod) {
+        return paymentMethods.data.find(
+            (pm) => pm.id === defaultPaymentMethod.id
+        )
+    }
+    return paymentMethods.data[0]
+}
+
+stripe.checkIfAccountSetupIsComplete = async (accountId) => {
+    try {
+        const account = await stripe.accounts.retrieve(accountId)
+
+        const { requirements } = account
+        const { currently_due, past_due } = requirements
+
+        return currently_due.length === 0 && past_due.length === 0
+    } catch (err) {
+        return false
+    }
 }
 
 module.exports = stripe
