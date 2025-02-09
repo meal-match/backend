@@ -82,16 +82,22 @@ app.post('/account-link', isAuthenticated, async (req, res) => {
             })
         }
 
+        const setupIsComplete =
+            await stripeClient.checkIfAccountSetupIsComplete(
+                user.stripeAccountId
+            )
+
         // TODO: add refresh and return URLs
         const accountLink = await stripeClient.accountLinks.create({
             account: user.stripeAccountId,
             refresh_url: 'https://mealmatchbama.vercel.app/',
             return_url: 'https://mealmatchbama.vercel.app/',
-            type: 'account_onboarding'
+            type: setupIsComplete ? 'account_update' : 'account_onboarding'
         })
 
         res.status(201).json({
-            accountLink: accountLink.url
+            accountLink: accountLink.url,
+            setupIsComplete
         })
     } catch (error) {
         console.error(error)

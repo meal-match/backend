@@ -171,7 +171,10 @@ app.patch('/:id/claim', isAuthenticated, async (req, res) => {
             })
         }
 
-        const user = await User.findById(req.session.userId, 'openOrders email')
+        const user = await User.findById(
+            req.session.userId,
+            'openOrders stripeAccountId'
+        )
         if (!user) {
             return res.status(404).json({
                 message: 'User not found'
@@ -179,7 +182,9 @@ app.patch('/:id/claim', isAuthenticated, async (req, res) => {
         }
 
         const isPayoutSetupComplete =
-            await stripeClient.checkIfAccountSetupIsComplete(user.email)
+            await stripeClient.checkIfAccountSetupIsComplete(
+                user.stripeAccountId
+            )
         if (!isPayoutSetupComplete) {
             return res.status(400).json({
                 message: 'Payout account not set up'
