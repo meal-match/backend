@@ -54,6 +54,9 @@ mongoose
 
         // Check for queued notifications every ten seconds
         setInterval(intervals.sendNotifications, 10 * 1000)
+
+        // Check for completed orders every 15 minutes
+        setInterval(intervals.completeOrders, 15 * 60 * 1000)
     })
     .catch((err) => {
         console.log('Error connecting to MongoDB', err)
