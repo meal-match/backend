@@ -13,7 +13,7 @@ const OrderSchema = new mongoose.Schema(
     { _id: false }
 )
 
-const PayMethodSchema = new mongoose.Schema(
+const PaymentMethodSchema = new mongoose.Schema(
     {
         id: { type: String, required: true },
         default: { type: Boolean, required: true }
@@ -65,11 +65,7 @@ const UserSchema = new mongoose.Schema({
         default: false
     },
     paymentMethods: {
-        type: [PayMethodSchema],
-        default: []
-    },
-    payoutMethods: {
-        type: [PayMethodSchema],
+        type: [PaymentMethodSchema],
         default: []
     },
     verificationToken: String, // Store the verification token
@@ -77,8 +73,8 @@ const UserSchema = new mongoose.Schema({
     resetPasswordExpires: Date, // Expiry time for the reset token
     openOrders: [OrderSchema], // Array of open orders
     paymentSetupIntent: String, // Store the stripe payment setup intent
-    payoutSetupIntent: String, // Store the stripe payout setup intent
-    pushToken: String // Store the push notification token from the frontend
+    pushToken: String, // Store the push notification token from the frontend
+    stripeAccountId: String // Store the stripe account ID
 })
 
 // Hash the password before saving the user document

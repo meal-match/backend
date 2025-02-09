@@ -140,12 +140,12 @@ app.delete('/setup-intent', isAuthenticated, async (req, res) => {
     }
 })
 
-// Route to get all stripe information about a given customer
+// Route to get all payment information about a given customer
 app.get('/customer', isAuthenticated, async (req, res) => {
     try {
         const user = await User.findById(
             req.session.userId,
-            'email paymentSetupIntent payoutSetupIntent paymentMethods payoutMethods'
+            'email paymentSetupIntent paymentMethods'
         )
         if (!user) {
             return res.status(404).json({
@@ -164,14 +164,11 @@ app.get('/customer', isAuthenticated, async (req, res) => {
         }
 
         const paymentMethods = await stripeClient.fetchPaymentMethods(user)
-        const payoutMethods = await stripeClient.fetchPayoutMethods(user)
 
         res.status(200).json({
             customer: customers.data[0],
             paymentMethods,
-            payoutMethods,
-            paymentSetupIntent: user.paymentSetupIntent,
-            payoutSetupIntent: user.payoutSetupIntent
+            paymentSetupIntent: user.paymentSetupIntent
         })
     } catch (err) {
         console.error(err)
