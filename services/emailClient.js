@@ -53,4 +53,37 @@ const sendEmail = async ({ to, subject, text, html }) => {
     }
 }
 
-module.exports = { sendEmail }
+const buildEmail = ({ header, firstName, description, url, linkText }) => {
+    const html = `
+        <html>
+            <head>
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.5; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+                    .button { background-color: #9E1B32; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; }
+                    .footer { font-size: 12px; color: #777; margin-top: 20px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h2>${header}</h2>
+                    <p>Hello ${firstName},</p>
+                    <p>${description}</p>
+                    <p><a class="button" href="${url}">${linkText}</a></p>
+                    <p class="footer">If you did not request this, you can ignore this email.</p>
+                </div>
+            </body>
+        </html>`
+
+    const text = `Hello ${firstName},
+
+${description}
+
+${url}
+
+If you did not request this, you can ignore this email.`
+
+    return { text, html }
+}
+
+module.exports = { sendEmail, buildEmail }
