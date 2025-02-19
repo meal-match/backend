@@ -74,7 +74,8 @@ const UserSchema = new mongoose.Schema({
     openOrders: [OrderSchema], // Array of open orders
     paymentSetupIntent: String, // Store the stripe payment setup intent
     pushToken: String, // Store the push notification token from the frontend
-    stripeAccountId: String // Store the stripe account ID
+    stripeAccountId: String, // Store the stripe account ID
+    stripeRefreshToken: String // Store the stripe refresh token
 })
 
 // Hash the password before saving the user document
