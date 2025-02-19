@@ -2,7 +2,6 @@ const cors = require('cors')
 const dotenv = require('dotenv')
 const express = require('express')
 const MongoStore = require('connect-mongo')
-const mongoose = require('mongoose')
 const session = require('express-session')
 
 const app = express()
@@ -27,6 +26,8 @@ if (process.env.ENVIRONMENT === 'dev') {
 }
 
 // Connect to MongoDB
+const mongooseClient = require('./services/mongooseClient')
+
 const dbUsername = process.env.DB_USERNAME
 const dbPassword = process.env.DB_PASSWORD
 const dbName = process.env.DB_NAME
@@ -37,27 +38,7 @@ if (!dbUsername || !dbPassword || !clusterUrl) {
 }
 
 const mongoUrl = `mongodb+srv://${dbUsername}:${dbPassword}@${clusterUrl}/${dbName}?retryWrites=true&w=majority`
-
-mongoose
-    .connect(mongoUrl)
-    .then(() => {
-        console.log('Connected to MongoDB')
-
-        // Load intervals
-        const intervals = require('./services/intervalClient')
-
-        // Check for unclaimed orders every minute
-        setInterval(intervals.deleteUnclaimedOrders, 60 * 1000)
-
-        // Check for seller timeouts every minute
-        setInterval(intervals.sellerTimeout, 60 * 1000)
-
-        // Check for queued notifications every ten seconds
-        setInterval(intervals.sendNotifications, 10 * 1000)
-    })
-    .catch((err) => {
-        console.log('Error connecting to MongoDB', err)
-    })
+mongooseClient.connect(mongoUrl)
 
 // Configure session management
 app.use(

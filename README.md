@@ -50,6 +50,10 @@ touch .env
 Open the newly created `.env` file and enter all needed environment variables, listed below.
 
 -   `CLIENT_URL`: The URL of the frontend application.
+-   `CLOUDINARY_CLOUD_NAME`: The Cloudinary cloud name.
+-   `CLOUDINARY_API_KEY`: The Cloudinary API key.
+-   `CLOUDINARY_API_SECRET`: The Cloudinary API secret.
+-   `CLOUDINARY_FOLDER`: The folder in Cloudinary where our receipts are stored.
 -   `DB_USERNAME`: The username the application will use to connect to the database.
 -   `DB_PASSWORD`: The corresponding password for `DB_USERNAME`.
 -   `DB_CLUSTER_URL`: The URL of the database cluster. This is what comes after the "@" but before the query parameters in the full connection URL.
