@@ -9,19 +9,31 @@ const { isAuthenticated } = require('../utils/authUtils')
 const app = express()
 dotenv.config()
 
-const sendVerificationEmail = async (email, verificationToken) => {
-    const subject = 'Verify Email'
-    const html = `
-            <p>You are receiving this because you (or someone else) have signed up for a MealMatch account. Click the link below to verify your email:</p>
-            <a href="${process.env.CLIENT_URL}/auth/verifyEmail?token=${verificationToken}">Verify Email</a>
-            <p>If you cannot click the link above, copy and paste the following URL into your browser:</p>
-            <p>${process.env.CLIENT_URL}/auth/verifyEmail?token=${verificationToken}</p>`
-    await emailClient.sendEmail({ to: email, subject, html })
+const sendVerificationEmail = async (email, firstName, verificationToken) => {
+    const subject = 'Verify Your MealMatch Account'
+
+    const { html, text } = emailClient.buildEmail({
+        header: 'Welcome to MealMatch!',
+        firstName,
+        description:
+            'Please click the link below to verify your email address:',
+        url: `${process.env.WEBSITE_URL}/auth/verifyEmail?token=${verificationToken}`,
+        linkText: 'Verify Email'
+    })
+
+    await emailClient.sendEmail({
+        to: email,
+        subject,
+        html,
+        text
+    })
 }
 
 // Sign up route
 app.post('/signup', async (req, res) => {
-    const { email, password, firstName, lastName } = req.body
+    const { password, firstName, lastName } = req.body
+    let { email } = req.body
+    email = email.toLowerCase()
 
     try {
         const user = await User.findOne({ email })
@@ -35,7 +47,7 @@ app.post('/signup', async (req, res) => {
         const verificationToken = crypto.randomBytes(32).toString('hex')
 
         await stripeClient.customers.create({
-            email: email.toLowerCase(),
+            email,
             name: `${firstName} ${lastName}`
         })
 
@@ -48,7 +60,7 @@ app.post('/signup', async (req, res) => {
             verificationToken
         })
 
-        await sendVerificationEmail(email, verificationToken)
+        await sendVerificationEmail(email, firstName, verificationToken)
 
         res.status(201).json({
             message:
@@ -79,7 +91,11 @@ app.post('/login', async (req, res) => {
 
         if (isMatch) {
             if (!user.isVerified) {
-                await sendVerificationEmail(email, user.verificationToken)
+                await sendVerificationEmail(
+                    email,
+                    user.firstName,
+                    user.verificationToken
+                )
                 return res.status(403).json({
                     message:
                         "Your email is not verified. We've resent an email with a verification link."
@@ -137,7 +153,10 @@ app.post('/send-reset', async (req, res) => {
     const { email } = req.body
 
     try {
-        const user = await User.findOne({ email })
+        const user = await User.findOne(
+            { email },
+            'firstName resetPasswordToken resetPasswordExpires'
+        )
 
         if (!user) {
             return res.status(401).json({
@@ -153,12 +172,14 @@ app.post('/send-reset', async (req, res) => {
 
         // Send email with password reset link
         const subject = 'Password Reset'
-        const html = `
-            <p>You are receiving this because you (or someone else) have requested the reset of the password for your account. Click the link below to reset your password:</p>
-            <a href="${process.env.CLIENT_URL}/auth/resetPassword?token=${token}">Reset Password</a>
-            <p>If you cannot click the link above, copy and paste the following URL into your browser:</p>
-            <p>${process.env.CLIENT_URL}/auth/resetPassword?token=${token}</p>`
-        await emailClient.sendEmail({ to: email, subject, html })
+        const { html, text } = emailClient.buildEmail({
+            header: 'Password Reset',
+            firstName: user.firstName,
+            description: 'Click the link below to reset your password:',
+            url: `${process.env.WEBSITE_URL}/auth/resetPassword?token=${token}`,
+            linkText: 'Reset Password'
+        })
+        await emailClient.sendEmail({ to: email, subject, html, text })
         res.status(200).json({
             message: 'Password reset link sent'
         })
@@ -175,6 +196,12 @@ app.post('/reset-password', async (req, res) => {
     const { token, password } = req.body
 
     try {
+        if (!token || !password) {
+            return res.status(400).json({
+                message: 'Token and password are required'
+            })
+        }
+
         // Find the user by the token and ensure it hasn't expired
         const user = await User.findOne({
             resetPasswordToken: token,
@@ -218,6 +245,12 @@ app.post('/verify', async (req, res) => {
     const { token } = req.body
 
     try {
+        if (!token) {
+            return res.status(400).json({
+                message: 'Token is required'
+            })
+        }
+
         // Find the user by the token and check if it hasn't expired
         const user = await User.findOne({ verificationToken: token })
 
