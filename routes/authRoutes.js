@@ -17,7 +17,7 @@ const sendVerificationEmail = async (email, firstName, verificationToken) => {
         firstName,
         description:
             'Please click the link below to verify your email address:',
-        url: `${process.env.WEBSITE_URL}/auth/verify?token=${verificationToken}`,
+        url: `${process.env.WEBSITE_URL}/auth/verifyEmail?token=${verificationToken}`,
         linkText: 'Verify Email'
     })
 

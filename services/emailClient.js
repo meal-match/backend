@@ -58,19 +58,28 @@ const buildEmail = ({ header, firstName, description, url, linkText }) => {
         <html>
             <head>
                 <style>
-                    body { font-family: Arial, sans-serif; line-height: 1.5; color: #333; }
-                    .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
-                    .button { background-color: #9E1B32; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; }
-                    .footer { font-size: 12px; color: #777; margin-top: 20px; }
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; padding: 20px; text-align: center; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); }
+                    .header { display: flex; align-items: center; justify-content: center; gap: 10px; }
+                    .logo { max-width: 50px; height: auto; }
+                    .button { background-color: #9E1B32; color: white !important; padding: 12px 20px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; margin-top: 10px; }
+                    .footer { font-size: 12px; color: #777; margin-top: 20px; border-top: 1px solid #ddd; padding-top: 10px; }
+                    .footer a { color: #9E1B32; text-decoration: none; font-weight: bold; }
                 </style>
             </head>
             <body>
                 <div class="container">
-                    <h2>${header}</h2>
-                    <p>Hello ${firstName},</p>
-                    <p>${description}</p>
-                    <p><a class="button" href="${url}">${linkText}</a></p>
-                    <p class="footer">If you did not request this, you can ignore this email.</p>
+                    <div class="header">
+                        <img class="logo" src="${process.env.WEBSITE_URL}/assets/MealMatchLogoIcon.png" alt="Company Logo">
+                        <h2>${header}</h2>
+                    </div>
+                    <div class="content">
+                        <p>Hello ${firstName},</p>
+                        <p>${description}</p>
+                        <p><a class="button" href="${url}">${linkText}</a></p>
+                    </div>
+                    <p class="footer">If you did not request this, you can ignore this email.<br>
+                    For more information, visit our <a href="${process.env.WEBSITE_URL}">website</a>.</p>
                 </div>
             </body>
         </html>`
@@ -81,7 +90,9 @@ ${description}
 
 ${url}
 
-If you did not request this, you can ignore this email.`
+If you did not request this, you can ignore this email.
+
+For more information, visit our website: ${process.env.WEBSITE_URL}`
 
     return { text, html }
 }
