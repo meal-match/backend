@@ -11,6 +11,17 @@ const app = express()
 // Route to fetch open orders that need a seller
 app.get('/', isAuthenticated, async (req, res) => {
     try {
+        const user = await User.findById(req.session.userId, 'openOrders')
+        if (!user) {
+            return res.status(404).json({
+                message: 'User not found'
+            })
+        }
+
+        const canClaimOrder = !user.openOrders.find(
+            (order) => order.type === 'sell'
+        )
+
         const now = new Date()
         const thirtyMinutesFromNow = new Date(now.getTime() + 30 * 60000)
 
@@ -30,7 +41,8 @@ app.get('/', isAuthenticated, async (req, res) => {
         })
 
         res.status(200).json({
-            orders: pendingOrders
+            orders: pendingOrders,
+            canClaimOrder
         })
     } catch (err) {
         console.log(err)
@@ -287,7 +299,10 @@ app.patch(
                 })
             }
 
-            const user = await User.findById(req.session.userId, 'openOrders')
+            const user = await User.findById(
+                req.session.userId,
+                'openOrders firstName lastName'
+            )
             if (!user) {
                 return res.status(404).json({
                     message: 'User not found'
@@ -368,6 +383,7 @@ app.patch(
             order.readyTime = readyTime
             order.confirmationTime = new Date()
             order.receiptImage = req.file.path
+            order.sellerName = `${user.firstName} ${user.lastName}`
 
             await order.save()
 
@@ -375,9 +391,9 @@ app.patch(
                 expoClient.queueNotification({
                     to: buyer.pushToken,
                     title: 'Order Confirmed',
-                    body: `Your order from ${order.restaurant} is confirmed and will be ready at ${readyTime}!`,
+                    body: `Your ${order.restaurant} order is confirmed and will be ready at ${readyTime}! The name to use for pickup is ${order.sellerName}.`,
                     data: {
-                        route: `/openOrders/${order._id}`
+                        route: `/openOrders/orderDetails?id=${order._id}`
                     }
                 })
             }

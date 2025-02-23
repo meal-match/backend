@@ -82,6 +82,10 @@ const OrderSchema = new mongoose.Schema({
     receiptImage: {
         type: String,
         required: false
+    },
+    sellerName: {
+        type: String,
+        required: false
     }
 })
 
