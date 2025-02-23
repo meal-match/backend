@@ -11,8 +11,8 @@ mongooseClient.connect = async (mongoUrl) => {
         // Check for unclaimed orders every minute
         setInterval(intervals.deleteUnclaimedOrders, 60 * 1000)
 
-        // Check for seller timeouts every minute
-        setInterval(intervals.sellerTimeout, 60 * 1000)
+        // Check for seller timeouts every ten seconds
+        setInterval(intervals.sellerTimeout, 10 * 1000)
 
         // Check for queued notifications every ten seconds
         setInterval(intervals.sendNotifications, 10 * 1000)
