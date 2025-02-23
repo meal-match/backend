@@ -11,6 +11,17 @@ const app = express()
 // Route to fetch open orders that need a seller
 app.get('/', isAuthenticated, async (req, res) => {
     try {
+        const user = await User.findById(req.session.userId, 'openOrders')
+        if (!user) {
+            return res.status(404).json({
+                message: 'User not found'
+            })
+        }
+
+        const canClaimOrder = !user.openOrders.find(
+            (order) => order.type === 'sell'
+        )
+
         const now = new Date()
         const thirtyMinutesFromNow = new Date(now.getTime() + 30 * 60000)
 
@@ -30,7 +41,8 @@ app.get('/', isAuthenticated, async (req, res) => {
         })
 
         res.status(200).json({
-            orders: pendingOrders
+            orders: pendingOrders,
+            canClaimOrder
         })
     } catch (err) {
         console.log(err)
