@@ -1,49 +1,65 @@
 const express = require('express')
-
 const stripeClient = require('../services/stripeClient')
-const { isAuthenticated } = require('../utils/authUtils')
 const User = require('../models/user')
+const crypto = require('node:crypto')
+
+const { isAuthenticated } = require('../utils/authUtils')
 
 const app = express()
 
-// Route to save a payout method by fetching or creating a payout setup intent
-app.get('/setup-intent', isAuthenticated, async (req, res) => {
+app.post('/account', isAuthenticated, async (req, res) => {
     try {
-        const user = await User.findById(
-            req.session.userId,
-            'email payoutSetupIntent'
-        )
+        const user = await User.findById(req.session.userId, 'stripeAccountId')
         if (!user) {
             return res.status(404).json({
                 message: 'User not found'
             })
         }
 
-        const customer = await stripeClient.customers.list({
-            email: user.email,
-            limit: 1
+        if (user.stripeAccountId) {
+            const setupIsComplete =
+                await stripeClient.checkIfAccountSetupIsComplete(
+                    user.stripeAccountId
+                )
+            return res.status(200).json({
+                message: 'Account already created',
+                account: user.stripeAccountId,
+                setupIsComplete
+            })
+        }
+
+        const account = await stripeClient.accounts.create({
+            controller: {
+                stripe_dashboard: {
+                    type: 'none'
+                },
+                fees: {
+                    payer: 'application'
+                },
+                losses: {
+                    payments: 'application'
+                },
+                requirement_collection: 'application'
+            },
+            capabilities: {
+                card_payments: { requested: true },
+                transfers: { requested: true }
+            },
+            country: 'US'
         })
-        if (!customer.data.length) {
-            return res.status(400).json({
-                message: 'Customer does not exist'
+
+        if (!account) {
+            return res.status(500).json({
+                message: 'Failed to create account'
             })
         }
 
-        const customerID = customer.data[0].id
+        user.stripeAccountId = account.id
+        await user.save()
 
-        // If no setup intent is found then create a new one
-        if (!user.paymentSetupIntent) {
-            const setupIntent = await stripeClient.setupIntents.create({
-                customer: customerID,
-                payment_method_types: ['us_bank_account']
-            })
-
-            user.payoutSetupIntent = setupIntent.client_secret
-            await user.save()
-        }
-
-        res.status(200).json({
-            payoutSetupIntent: user.payoutSetupIntent
+        res.status(201).json({
+            account: account.id,
+            setupIsComplete: false
         })
     } catch (err) {
         console.error(err)
@@ -53,146 +69,91 @@ app.get('/setup-intent', isAuthenticated, async (req, res) => {
     }
 })
 
-// Route to conclude the payout setup process
-app.delete('/setup-intent', isAuthenticated, async (req, res) => {
-    const { isDefault } = req.body
+app.post('/account-link', async (req, res) => {
+    const { token } = req.body
     try {
-        const user = await User.findById(
-            req.session.userId,
-            'email paymentSetupIntent payoutMethods'
-        )
-        if (!user) {
-            return res.status(404).json({
-                message: 'User not found'
+        // We either need to be logged in or have a refresh token
+        if (!req.session?.userId && !token) {
+            return res.status(401).json({
+                message: 'Unauthorized'
             })
         }
 
-        const customer = await stripeClient.customers.list({
-            email: user.email,
-            limit: 1
-        })
-        if (!customer.data.length) {
-            return res.status(400).json({
-                message: 'Customer does not exist'
-            })
-        }
-
-        const stripePayoutMethods = await stripeClient.paymentMethods.list({
-            customer: customer.data[0].id
-        })
-
-        if (stripePayoutMethods.data.length) {
-            const newMethod = stripePayoutMethods.data.filter(
-                (method) =>
-                    method.type === 'us_bank_account' &&
-                    !user.payoutMethods.find((pm) => pm.id === method.id)
+        let user
+        if (req.session.userId) {
+            user = await User.findById(
+                req.session.userId,
+                'stripeAccountId stripeRefreshToken'
             )
-            let message = 'No new payout method found'
-
-            if (newMethod.length) {
-                user.paymentSetupIntent = null
-                user.payoutMethods.push({
-                    id: newMethod[0].id,
-                    default: isDefault || false
-                })
-                await user.save()
-                message = 'Payout method added successfully'
-            }
-
-            const payoutMethods = await stripeClient.fetchPayoutMethods(user)
-
-            res.status(200).json({
-                message,
-                payoutMethods
-            })
         } else {
-            res.status(400).json({
-                message: 'No payout method found'
+            user = await User.findOne(
+                { stripeRefreshToken: token },
+                'stripeAccountId stripeRefreshToken'
+            )
+        }
+
+        if (!user) {
+            return res.status(404).json({
+                message: 'User not found'
             })
         }
-    } catch (err) {
-        console.error(err)
+        if (!user.stripeAccountId) {
+            return res.status(400).json({
+                message: 'Account not created'
+            })
+        }
+
+        const setupIsComplete =
+            await stripeClient.checkIfAccountSetupIsComplete(
+                user.stripeAccountId
+            )
+
+        user.stripeRefreshToken = crypto.randomBytes(32).toString('hex')
+        await user.save()
+
+        const accountLink = await stripeClient.accountLinks.create({
+            account: user.stripeAccountId,
+            refresh_url: `${process.env.WEBSITE_URL}/stripe/refresh?token=${user.stripeRefreshToken}`,
+            return_url: `${process.env.WEBSITE_URL}/stripe/complete`,
+            type: setupIsComplete ? 'account_update' : 'account_onboarding'
+        })
+
+        res.status(201).json({
+            accountLink: accountLink.url,
+            setupIsComplete
+        })
+    } catch (error) {
+        console.error(error)
         res.status(500).json({
             message: 'Internal server error'
         })
     }
 })
 
-// Route to change the default payout method
-app.patch('/default-method/:id', isAuthenticated, async (req, res) => {
-    const { id } = req.params
+app.get('/account-status', isAuthenticated, async (req, res) => {
     try {
-        const user = await User.findById(
-            req.session.userId,
-            'email paymentSetupIntent payoutMethods'
-        )
+        const user = await User.findById(req.session.userId, 'stripeAccountId')
         if (!user) {
             return res.status(404).json({
                 message: 'User not found'
             })
         }
-
-        const payoutMethod = user.payoutMethods.find((pm) => pm.id === id)
-        if (!payoutMethod) {
-            return res.status(404).json({
-                message: 'Payout method not found'
+        if (!user.stripeAccountId) {
+            return res.status(200).json({
+                setupIsComplete: false
             })
         }
 
-        const currentDefault = user.payoutMethods.find((pm) => pm.default)
-        if (currentDefault) {
-            currentDefault.default = false
-        }
-        payoutMethod.default = true
-        await user.save()
-
-        const payoutMethods = await stripeClient.fetchPayoutMethods(user)
+        const setupIsComplete =
+            await stripeClient.checkIfAccountSetupIsComplete(
+                user.stripeAccountId
+            )
 
         res.status(200).json({
-            message: 'Default payout method updated successfully',
-            payoutMethods
+            setupIsComplete
         })
-    } catch (err) {
-        console.error(err)
-        res.status(500).json({
-            message: 'Internal server error'
-        })
-    }
-})
-
-// Route to delete a payout method
-app.delete('/:id', isAuthenticated, async (req, res) => {
-    const { id } = req.params
-    try {
-        const user = await User.findById(
-            req.session.userId,
-            'email payoutMethods'
-        )
-        if (!user) {
-            return res.status(404).json({
-                message: 'User not found'
-            })
-        }
-
-        if (!user.payoutMethods.find((pm) => pm.id === id)) {
-            return res.status(404).json({
-                message: 'Payout method not found'
-            })
-        }
-
-        await stripeClient.paymentMethods.detach(id)
-
-        user.payoutMethods = user.payoutMethods.filter((pm) => pm.id !== id)
-        await user.save()
-
-        const payoutMethods = await stripeClient.fetchPayoutMethods(user)
-
-        res.status(200).json({
-            message: 'Payout method deleted successfully',
-            payoutMethods
-        })
-    } catch (err) {
-        console.error(err)
+    } catch (error) {
+        console.error(error)
         res.status(500).json({
             message: 'Internal server error'
         })

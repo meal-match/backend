@@ -4,12 +4,24 @@ const { uploadImageToCloudinary } = require('../services/cloudinaryClient')
 const User = require('../models/user')
 const { isAuthenticated } = require('../utils/authUtils')
 const expoClient = require('../services/expoClient')
+const stripeClient = require('../services/stripeClient')
 
 const app = express()
 
 // Route to fetch open orders that need a seller
 app.get('/', isAuthenticated, async (req, res) => {
     try {
+        const user = await User.findById(req.session.userId, 'openOrders')
+        if (!user) {
+            return res.status(404).json({
+                message: 'User not found'
+            })
+        }
+
+        const canClaimOrder = !user.openOrders.find(
+            (order) => order.type === 'sell'
+        )
+
         const now = new Date()
         const thirtyMinutesFromNow = new Date(now.getTime() + 30 * 60000)
 
@@ -29,7 +41,8 @@ app.get('/', isAuthenticated, async (req, res) => {
         })
 
         res.status(200).json({
-            orders: pendingOrders
+            orders: pendingOrders,
+            canClaimOrder
         })
     } catch (err) {
         console.log(err)
@@ -53,11 +66,21 @@ app.post('/buy', isAuthenticated, async (req, res) => {
         pickupTime
     } = req.body
     try {
-        const user = await User.findById(req.session.userId, 'openOrders')
+        const user = await User.findById(
+            req.session.userId,
+            'openOrders paymentMethods email'
+        )
         if (!user) {
             return res.status(404).json({
-                status: 404,
                 message: 'User not found'
+            })
+        }
+
+        const defaultPaymentMethod =
+            await stripeClient.fetchDefaultPaymentMethod(user)
+        if (!defaultPaymentMethod) {
+            return res.status(400).json({
+                message: 'User does not have a payment method'
             })
         }
 
@@ -131,7 +154,6 @@ app.delete('/:id/cancel-buy', isAuthenticated, async (req, res) => {
                 message: 'Order cancelled successfully'
             })
         } else {
-            // TODO: potentially allow cancelling orders that are neither pending nor confirmed
             return res.status(400).json({
                 message: 'Order cannot be cancelled'
             })
@@ -155,40 +177,52 @@ app.patch('/:id/claim', isAuthenticated, async (req, res) => {
             })
         }
 
-        if (order.status === 'Pending') {
-            const user = await User.findById(req.session.userId, 'openOrders')
-            if (!user) {
-                return res.status(404).json({
-                    status: 404,
-                    message: 'User not found'
-                })
-            }
-
-            if (user.openOrders.find((order) => order.type === 'sell')) {
-                return res.status(400).json({
-                    message: 'User already has an open sell order'
-                })
-            }
-
-            order.status = 'Claimed'
-            order.seller = req.session.userId
-            order.claimTime = new Date()
-            await order.save()
-
-            user.openOrders.push({
-                id: order._id,
-                type: 'sell'
-            })
-            await user.save()
-
-            res.status(200).json({
-                message: 'Order claimed successfully'
-            })
-        } else {
+        if (order.status !== 'Pending') {
             return res.status(400).json({
                 message: 'Order cannot be claimed'
             })
         }
+
+        const user = await User.findById(
+            req.session.userId,
+            'openOrders stripeAccountId'
+        )
+        if (!user) {
+            return res.status(404).json({
+                message: 'User not found'
+            })
+        }
+
+        const isPayoutSetupComplete =
+            await stripeClient.checkIfAccountSetupIsComplete(
+                user.stripeAccountId
+            )
+        if (!isPayoutSetupComplete) {
+            return res.status(400).json({
+                message: 'Payout account not set up'
+            })
+        }
+
+        if (user.openOrders.find((order) => order.type === 'sell')) {
+            return res.status(400).json({
+                message: 'User already has an open sell order'
+            })
+        }
+
+        order.status = 'Claimed'
+        order.seller = req.session.userId
+        order.claimTime = new Date()
+        await order.save()
+
+        user.openOrders.push({
+            id: order._id,
+            type: 'sell'
+        })
+        await user.save()
+
+        res.status(200).json({
+            message: 'Order claimed successfully'
+        })
     } catch (err) {
         console.log(err)
         res.status(500).json({
@@ -211,7 +245,6 @@ app.patch('/:id/unclaim', isAuthenticated, async (req, res) => {
         const user = await User.findById(req.session.userId, 'openOrders')
         if (!user) {
             return res.status(404).json({
-                status: 404,
                 message: 'User not found'
             })
         }
@@ -249,6 +282,7 @@ app.patch('/:id/unclaim', isAuthenticated, async (req, res) => {
     }
 })
 
+// Route for a seller to confirm an order
 app.patch(
     '/:id/confirm',
     uploadImageToCloudinary.single('receipt'),
@@ -265,10 +299,12 @@ app.patch(
                 })
             }
 
-            const user = await User.findById(req.session.userId, 'openOrders')
+            const user = await User.findById(
+                req.session.userId,
+                'openOrders firstName lastName'
+            )
             if (!user) {
                 return res.status(404).json({
-                    status: 404,
                     message: 'User not found'
                 })
             }
@@ -276,7 +312,7 @@ app.patch(
             if (order.status !== 'Claimed') {
                 return res.status(400).json({
                     message:
-                        'Order is not claimed and can therefore not be confirmed'
+                        'Order is not claimed and therefore cannot be confirmed'
                 })
             }
 
@@ -307,29 +343,60 @@ app.patch(
                 })
             }
 
+            const buyer = await User.findById(
+                order.buyer.toString(),
+                'email paymentMethods pushToken'
+            )
+            if (!buyer) {
+                return res.status(404).json({
+                    message: 'Buyer not found'
+                })
+            }
+
+            const paymentMethod =
+                await stripeClient.fetchDefaultPaymentMethod(buyer)
+            if (!paymentMethod) {
+                return res.status(400).json({
+                    message: 'No payment method found for the buyer'
+                })
+            }
+
+            const customer = await stripeClient.fetchCustomer(buyer.email)
+            if (!customer) {
+                return res.status(400).json({
+                    message: 'Customer not found'
+                })
+            }
+
+            await stripeClient.paymentIntents.create({
+                amount: 600,
+                currency: 'usd',
+                payment_method: paymentMethod.id,
+                confirm: true,
+                receipt_email: buyer.email,
+                customer: customer.id,
+                off_session: true,
+                description: `Payment for order ${order._id}`
+            })
+
             order.status = 'Confirmed'
             order.readyTime = readyTime
             order.confirmationTime = new Date()
             order.receiptImage = req.file.path
+            order.sellerName = `${user.firstName} ${user.lastName}`
 
             await order.save()
 
-            const buyer = await User.findById(
-                order.buyer.toString(),
-                'pushToken'
-            )
             if (buyer?.pushToken) {
                 expoClient.queueNotification({
                     to: buyer.pushToken,
                     title: 'Order Confirmed',
-                    body: `Your order from ${order.restaurant} is confirmed and will be ready at ${readyTime}!`,
+                    body: `Your ${order.restaurant} order is confirmed and will be ready at ${readyTime}! The name to use for pickup is ${order.sellerName}.`,
                     data: {
-                        route: `/openOrders/${order._id}`
+                        route: `/openOrders/orderDetails?id=${order._id}`
                     }
                 })
             }
-
-            // TODO: bill the buyer
 
             res.status(200).json({
                 message: 'Order confirmed successfully'
