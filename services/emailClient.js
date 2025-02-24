@@ -54,7 +54,7 @@ const sendEmail = async ({ to, subject, text, html }) => {
 }
 
 const buildEmail = ({ header, firstName, description, url, linkText }) => {
-    const html = `
+    let html = `
         <html>
             <head>
                 <style>
@@ -75,24 +75,29 @@ const buildEmail = ({ header, firstName, description, url, linkText }) => {
                     </div>
                     <div class="content">
                         <p>Hello ${firstName},</p>
-                        <p>${description}</p>
-                        <p><a class="button" href="${url}">${linkText}</a></p>
-                    </div>
-                    <p class="footer">If you did not request this, you can ignore this email.<br>
-                    For more information, visit our <a href="${process.env.WEBSITE_URL}">website</a>.</p>
-                </div>
-            </body>
-        </html>`
+                        <p>${description}</p>`
+    if (url) {
+        html += `<p><a class="button" href="${url}">${linkText}</a></p>`
+    }
+    html += '</div>'
+    if (url) {
+        html += `<p class="footer">If you did not request this, you can ignore this email.<br>
+            For more information, visit our <a href="${process.env.WEBSITE_URL}">website</a>.</p>
+        </div>`
+    }
+    html += '</body></html>'
 
-    const text = `Hello ${firstName},
+    let text = `Hello ${firstName},
 
-${description}
+${description}`
 
-${url}
+    if (url) {
+        text += `${url}
 
 If you did not request this, you can ignore this email.
 
 For more information, visit our website: ${process.env.WEBSITE_URL}`
+    }
 
     return { text, html }
 }

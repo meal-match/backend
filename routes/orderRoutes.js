@@ -5,6 +5,7 @@ const User = require('../models/user')
 const { isAuthenticated } = require('../utils/authUtils')
 const expoClient = require('../services/expoClient')
 const stripeClient = require('../services/stripeClient')
+const emailClient = require('../services/emailClient')
 
 const app = express()
 
@@ -410,13 +411,114 @@ app.patch(
     }
 )
 
+app.patch('/:id/dispute', isAuthenticated, async (req, res) => {
+    const { id } = req.params
+    const { reason } = req.body
+
+    try {
+        const order = await Order.findById(id)
+        if (!order) {
+            return res.status(404).json({
+                message: 'Order not found'
+            })
+        }
+
+        if (!reason) {
+            return res.status(400).json({
+                message: 'Dispute reason is required'
+            })
+        }
+
+        const user = await User.findById(req.session.userId, 'openOrders')
+        if (!user) {
+            return res.status(404).json({
+                status: 404,
+                message: 'User not found'
+            })
+        }
+
+        if (order.status !== 'Confirmed') {
+            return res.status(400).json({
+                message: 'Order must be confirmed to be disputed'
+            })
+        }
+
+        if (order.buyer.toString() !== req.session.userId) {
+            return res.status(401).json({
+                message: 'You must be the buyer to dispute an order'
+            })
+        }
+
+        // Send notification to seller
+        const seller = await User.findById(
+            order.seller.toString(),
+            'pushToken firstName email'
+        )
+        if (seller?.pushToken) {
+            expoClient.queueNotification({
+                to: seller.pushToken,
+                title: 'Order Disputed',
+                body: `Your order from ${order.restaurant} has been disputed by the buyer. We will review the issue and get back to you soon. Your payment will be held until the issue is resolved.`,
+                data: {
+                    route: `/openOrders/orderDetails?id=${order._id}`
+                }
+            })
+        }
+
+        // Email the seller
+        const { html: sellerHtml, text: sellerText } = emailClient.buildEmail({
+            header: 'Order Disputed',
+            firstName: seller.firstName,
+            description: `Your order from ${order.restaurant} has been disputed by the buyer. We will review the issue and get back to you soon. Your payment will be held until the issue is resolved.`
+        })
+        await emailClient.sendEmail({
+            to: seller.email,
+            subject: 'Dispute Initiated',
+            html: sellerHtml,
+            text: sellerText
+        })
+
+        // Email the admin
+        const { html: adminHtml, text: adminText } = emailClient.buildEmail({
+            header: 'Order Disputed',
+            firstName: 'Admin',
+            description: `Order ${order._id} has been disputed by the buyer with the following reason:
+
+${reason}
+
+Please review on MongoDB ASAP.`
+        })
+        await emailClient.sendEmail({
+            to: process.env.EMAIL_ADDRESS,
+            subject: 'Dispute Initiated',
+            html: adminHtml,
+            text: adminText
+        })
+
+        order.status = 'Disputed'
+        order.disputeTime = new Date()
+        order.disputeReason = reason
+        await order.save()
+
+        res.status(200).json({
+            message: 'Order disputed successfully'
+        })
+    } catch (err) {
+        console.log(err)
+        res.status(500).json({
+            message: 'Internal server error'
+        })
+    }
+})
+
 // Route to fetch open orders for a user
 app.get('/open', isAuthenticated, async (req, res) => {
     try {
         const userID = req.session.userId
 
         const openOrders = await Order.find({
-            $or: [{ buyer: userID }, { seller: userID }]
+            $or: [{ buyer: userID }, { seller: userID }],
+            status: { $ne: 'Completed' }
         }).lean()
 
         res.status(200).json({
