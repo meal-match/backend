@@ -5,6 +5,7 @@ const User = require('../models/user')
 const { isAuthenticated } = require('../utils/authUtils')
 const expoClient = require('../services/expoClient')
 const stripeClient = require('../services/stripeClient')
+const emailClient = require('../services/emailClient')
 
 const app = express()
 
@@ -413,6 +414,7 @@ app.patch(
 app.patch('/:id/dispute', isAuthenticated, async (req, res) => {
     const { id } = req.params
     const { reason } = req.body
+
     try {
         const order = await Order.findById(id)
         if (!order) {
@@ -448,20 +450,50 @@ app.patch('/:id/dispute', isAuthenticated, async (req, res) => {
         }
 
         // Send notification to seller
-        const seller = await User.findById(order.seller.toString(), 'pushToken')
+        const seller = await User.findById(
+            order.seller.toString(),
+            'pushToken firstName email'
+        )
         if (seller?.pushToken) {
             expoClient.queueNotification({
                 to: seller.pushToken,
                 title: 'Order Disputed',
                 body: `Your order from ${order.restaurant} has been disputed by the buyer. We will review the issue and get back to you soon. Your payment will be held until the issue is resolved.`,
                 data: {
-                    route: `/openOrders/${order._id}`
+                    route: `/openOrders/orderDetails?id=${order._id}`
                 }
             })
         }
 
-        // TODO: send email to seller
-        // TODO: send email to admin
+        // Email the seller
+        const { html: sellerHtml, text: sellerText } = emailClient.buildEmail({
+            header: 'Order Disputed',
+            firstName: seller.firstName,
+            description: `Your order from ${order.restaurant} has been disputed by the buyer. We will review the issue and get back to you soon. Your payment will be held until the issue is resolved.`
+        })
+        await emailClient.sendEmail({
+            to: seller.email,
+            subject: 'Dispute Initiated',
+            html: sellerHtml,
+            text: sellerText
+        })
+
+        // Email the admin
+        const { html: adminHtml, text: adminText } = emailClient.buildEmail({
+            header: 'Order Disputed',
+            firstName: 'Admin',
+            description: `Order ${order._id} has been disputed by the buyer with the following reason:
+
+${reason}
+
+Please review on MongoDB ASAP.`
+        })
+        await emailClient.sendEmail({
+            to: process.env.EMAIL_ADDRESS,
+            subject: 'Dispute Initiated',
+            html: adminHtml,
+            text: adminText
+        })
 
         order.status = 'Disputed'
         order.disputeTime = new Date()
@@ -485,7 +517,8 @@ app.get('/open', isAuthenticated, async (req, res) => {
         const userID = req.session.userId
 
         const openOrders = await Order.find({
-            $or: [{ buyer: userID }, { seller: userID }]
+            $or: [{ buyer: userID }, { seller: userID }],
+            status: { $ne: 'Completed' }
         }).lean()
 
         res.status(200).json({
