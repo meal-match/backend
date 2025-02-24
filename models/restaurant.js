@@ -24,7 +24,7 @@ const DrinkSchema = new mongoose.Schema({
         required: true
     },
     drinkCustomizations: {
-        type: [String],
+        type: mongoose.Schema.Types.Mixed,
         required: true,
         default: []
     },
