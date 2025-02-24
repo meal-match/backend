@@ -3,6 +3,7 @@ const dotenv = require('dotenv')
 const express = require('express')
 const MongoStore = require('connect-mongo')
 const session = require('express-session')
+const rateLimit = require('express-rate-limit')
 
 const app = express()
 app.use(express.json())
@@ -54,6 +55,17 @@ app.use(
             secure: process.env.ENVIRONMENT === 'prod', // Use secure cookies in production
             maxAge: 1000 * 60 * 60 * 24 // Session expires in 1 day
         }
+    })
+)
+
+// Configure rate limiting
+app.use(
+    rateLimit({
+        windowMs: 5 * 60 * 1000, // 5 minutes
+        max: 100, // Limit each IP to 100 requests per windowMs
+        message: 'Too many requests from this IP, please try again later.',
+        standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
+        legacyHeaders: false // Disable the `X-RateLimit-*` headers
     })
 )
 
