@@ -60,12 +60,8 @@ const OrderSchema = new mongoose.Schema({
         default: 'Pending'
     },
     readyTime: {
-        type: String,
-        required: false,
-        match: [
-            /^(0?[1-9]|1[0-2]):[0-5]\d\s?[APap][Mm]$/,
-            'Invalid time format. Use "9:34 AM" or "11:57 PM".'
-        ]
+        type: Date,
+        required: false
     },
     confirmationTime: {
         type: Date,
@@ -94,6 +90,11 @@ const OrderSchema = new mongoose.Schema({
     sellerName: {
         type: String,
         required: false
+    },
+    readyNotified: {
+        type: Boolean,
+        required: false,
+        default: false
     }
 })
 
