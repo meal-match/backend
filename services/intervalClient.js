@@ -10,13 +10,16 @@ intervals.deleteUnclaimedOrders = async () => {
     let deletionCount = 0
 
     // Loop through unclaimed orders that have a pickup time in less than 5 minutes
-    const orders = await Order.find({
-        status: 'Pending',
-        desiredPickupTime: {
-            $exists: true,
-            $lte: new Date(Date.now() + 5 * 60 * 1000)
-        }
-    })
+    const orders = await Order.find(
+        {
+            status: 'Pending',
+            desiredPickupTime: {
+                $exists: true,
+                $lte: new Date(Date.now() + 5 * 60 * 1000)
+            }
+        },
+        'buyer restaurant'
+    )
     for (const order of orders) {
         try {
             // Delete order
@@ -39,7 +42,7 @@ intervals.deleteUnclaimedOrders = async () => {
                     expoClient.queueNotification({
                         to: user.pushToken,
                         title: 'Order Deleted',
-                        body: 'Your order was deleted due to inactivity.'
+                        body: `Your ${order.restaurant} order was deleted due to inactivity.`
                     })
                 }
             }
@@ -63,13 +66,16 @@ intervals.sellerTimeout = async () => {
     let timeoutCount = 0
 
     // Loop through orders that were claimed more than 7 minutes ago
-    const orders = await Order.find({
-        status: 'Claimed',
-        claimTime: {
-            $exists: true,
-            $lte: new Date(Date.now() - 7 * 60 * 1000)
-        }
-    })
+    const orders = await Order.find(
+        {
+            status: 'Claimed',
+            claimTime: {
+                $exists: true,
+                $lte: new Date(Date.now() - 7 * 60 * 1000)
+            }
+        },
+        'seller restaurant'
+    )
     for (const order of orders) {
         try {
             // Update seller's open orders
@@ -87,7 +93,7 @@ intervals.sellerTimeout = async () => {
                     expoClient.queueNotification({
                         to: seller.pushToken,
                         title: 'Order Unclaimed',
-                        body: 'Your order was unclaimed due to inactivity.'
+                        body: `Your ${order.restaurant} order was unclaimed due to inactivity.`
                     })
                 }
             }
@@ -120,17 +126,70 @@ intervals.sendNotifications = async () => {
     }
 }
 
+intervals.sendReadyNotifications = async () => {
+    let notificationCount = 0
+
+    // Loop through confirmed ordrs that have past their estimated ready time
+    const orders = await Order.find(
+        {
+            status: 'Confirmed',
+            readyTime: {
+                $exists: true,
+                $lte: new Date(Date.now())
+            },
+            readyNotified: false
+        },
+        'buyer restaurant'
+    )
+    for (const order of orders) {
+        try {
+            // Notify buyer
+            const buyer = await User.findById(
+                order.buyer,
+                'pushToken openOrders'
+            )
+            if (buyer?.pushToken) {
+                expoClient.queueNotification({
+                    to: buyer.pushToken,
+                    title: 'Order Ready',
+                    body: `Your ${order.restaurant} order should be about ready for pickup!`
+                })
+            }
+
+            order.readyNotified = true
+            await order.save()
+
+            notificationCount++
+        } catch (e) {
+            console.error(
+                'An error occured while notifying a buyer that their order was ready, of order with ID: ',
+                order._id,
+                e
+            )
+        }
+    }
+
+    if (notificationCount > 0) {
+        console.log(
+            `Notified ${notificationCount} buyers that their order is ready`
+        )
+    }
+}
+
 intervals.completeOrders = async () => {
     let completionCount = 0
 
     // Loop through orders that were confirmed at least 3 hours ago
-    const orders = await Order.find({
-        status: 'Confirmed',
-        confirmationTime: {
-            $exists: true,
-            $lte: new Date(Date.now() - 3 * 60 * 60 * 1000)
-        }
-    })
+    const orders = await Order.find(
+        {
+            status: 'Confirmed',
+            confirmationTime: {
+                $exists: true,
+                $lte: new Date(Date.now() - 3 * 60 * 60 * 1000)
+            }
+        },
+        'buyer seller restaurant receiptImage'
+    )
     for (const order of orders) {
         try {
             // Update buyer's open orders
@@ -172,7 +231,7 @@ intervals.completeOrders = async () => {
                     expoClient.queueNotification({
                         to: seller.pushToken,
                         title: 'Order Completed',
-                        body: 'Your sale was completed. You should receive a payout soon.'
+                        body: `Your ${order.restaurant} sale was completed. You should receive a payout soon.`
                     })
                 }
             }

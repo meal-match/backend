@@ -6,6 +6,7 @@ const { isAuthenticated } = require('../utils/authUtils')
 const expoClient = require('../services/expoClient')
 const stripeClient = require('../services/stripeClient')
 const emailClient = require('../services/emailClient')
+const { formatTime } = require('../utils/timeUtils')
 
 const app = express()
 
@@ -194,6 +195,15 @@ app.patch('/:id/claim', isAuthenticated, async (req, res) => {
             })
         }
 
+        if (
+            process.env.ENVIRONMENT !== 'dev' &&
+            order.buyer.toString() === req.session.userId
+        ) {
+            return res.status(400).json({
+                message: 'Buyer cannot claim their own order'
+            })
+        }
+
         const isPayoutSetupComplete =
             await stripeClient.checkIfAccountSetupIsComplete(
                 user.stripeAccountId
@@ -323,12 +333,6 @@ app.patch(
                 })
             }
 
-            if (!/^(0?[1-9]|1[0-2]):[0-5]\d\s?[APap][Mm]$/.test(readyTime)) {
-                return res.status(400).json({
-                    message: 'Invalid ready time format'
-                })
-            }
-
             // Validate that an image was uploaded
             if (!req.file) {
                 return res
@@ -380,8 +384,10 @@ app.patch(
                 description: `Payment for order ${order._id}`
             })
 
+            const parsedReadyTime = new Date(readyTime)
+
             order.status = 'Confirmed'
-            order.readyTime = readyTime
+            order.readyTime = parsedReadyTime
             order.confirmationTime = new Date()
             order.receiptImage = req.file.path
             order.sellerName = `${user.firstName} ${user.lastName}`
@@ -392,7 +398,7 @@ app.patch(
                 expoClient.queueNotification({
                     to: buyer.pushToken,
                     title: 'Order Confirmed',
-                    body: `Your ${order.restaurant} order is confirmed and will be ready at ${readyTime}! The name to use for pickup is ${order.sellerName}.`,
+                    body: `Your ${order.restaurant} order is confirmed and will be ready at ${formatTime(parsedReadyTime)}! The name to use for pickup is ${order.sellerName}.`,
                     data: {
                         route: `/openOrders/orderDetails?id=${order._id}`
                     }
