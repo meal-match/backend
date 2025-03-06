@@ -14,6 +14,9 @@ mongooseClient.connect = async (mongoUrl) => {
         // Check for seller timeouts every ten seconds
         setInterval(intervals.sellerTimeout, 10 * 1000)
 
+        // Check for order ready notifications every minute
+        setInterval(intervals.sendReadyNotifications, 60 * 1000)
+
         // Check for queued notifications every ten seconds
         setInterval(intervals.sendNotifications, 10 * 1000)
 
