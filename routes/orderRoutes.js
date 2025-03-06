@@ -10,6 +10,21 @@ const { formatTime } = require('../utils/timeUtils')
 
 const app = express()
 
+const fetchOpenOrders = async (userID) => {
+    const openOrders = await Order.find({
+        $or: [{ buyer: userID }, { seller: userID }],
+        status: { $ne: 'Completed' }
+    }).lean()
+
+    return openOrders.map((order) => {
+        const isBuy = order.buyer.toString() === userID
+        order.type = isBuy ? 'buy' : 'sell'
+        order.buyer = undefined
+        order.seller = undefined
+        return order
+    })
+}
+
 // Route to fetch open orders that need a seller
 app.get('/', isAuthenticated, async (req, res) => {
     try {
@@ -108,9 +123,12 @@ app.post('/buy', isAuthenticated, async (req, res) => {
         })
         await user.save()
 
+        const openOrders = await fetchOpenOrders(req.session.userId)
+
         res.status(201).json({
             message: 'Order created successfully',
-            orderID: order._id
+            orderID: order._id,
+            openOrders
         })
     } catch (err) {
         console.log(err)
@@ -152,8 +170,11 @@ app.delete('/:id/cancel-buy', isAuthenticated, async (req, res) => {
             )
             await user.save()
 
+            const openOrders = await fetchOpenOrders(req.session.userId)
+
             res.status(200).json({
-                message: 'Order cancelled successfully'
+                message: 'Order cancelled successfully',
+                openOrders
             })
         } else {
             return res.status(400).json({
@@ -231,8 +252,11 @@ app.patch('/:id/claim', isAuthenticated, async (req, res) => {
         })
         await user.save()
 
+        const openOrders = await fetchOpenOrders(req.session.userId)
+
         res.status(200).json({
-            message: 'Order claimed successfully'
+            message: 'Order claimed successfully',
+            openOrders
         })
     } catch (err) {
         console.log(err)
@@ -282,8 +306,11 @@ app.patch('/:id/unclaim', isAuthenticated, async (req, res) => {
         )
         await user.save()
 
+        const openOrders = await fetchOpenOrders(req.session.userId)
+
         res.status(200).json({
-            message: 'Order unclaimed successfully'
+            message: 'Order unclaimed successfully',
+            openOrders
         })
     } catch (err) {
         console.log(err)
@@ -405,8 +432,11 @@ app.patch(
                 })
             }
 
+            const openOrders = await fetchOpenOrders(req.session.userId)
+
             res.status(200).json({
-                message: 'Order confirmed successfully'
+                message: 'Order confirmed successfully',
+                openOrders
             })
         } catch (err) {
             console.log(err)
@@ -417,6 +447,7 @@ app.patch(
     }
 )
 
+// Route for a buyer to dispute an order
 app.patch('/:id/dispute', isAuthenticated, async (req, res) => {
     const { id } = req.params
     const { reason } = req.body
@@ -506,8 +537,11 @@ Please review on MongoDB ASAP.`
         order.disputeReason = reason
         await order.save()
 
+        const openOrders = await fetchOpenOrders(req.session.userId)
+
         res.status(200).json({
-            message: 'Order disputed successfully'
+            message: 'Order disputed successfully',
+            openOrders
         })
     } catch (err) {
         console.log(err)
@@ -522,19 +556,10 @@ app.get('/open', isAuthenticated, async (req, res) => {
     try {
         const userID = req.session.userId
 
-        const openOrders = await Order.find({
-            $or: [{ buyer: userID }, { seller: userID }],
-            status: { $ne: 'Completed' }
-        }).lean()
+        const openOrders = await fetchOpenOrders(userID)
 
         res.status(200).json({
-            orders: openOrders.map((order) => {
-                const isBuy = order.buyer.toString() === userID
-                order.type = isBuy ? 'buy' : 'sell'
-                order.buyer = undefined
-                order.seller = undefined
-                return order
-            })
+            openOrders
         })
     } catch (err) {
         console.log(err)
