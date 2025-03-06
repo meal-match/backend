@@ -33,7 +33,8 @@ app.delete('/', isAuthenticated, async (req, res) => {
 
         // Check if user has open orders
         const openOrders = await Order.find({
-            $or: [{ buyer: userID }, { seller: userID }]
+            $or: [{ buyer: userID }, { seller: userID }],
+            status: { $ne: 'Completed' }
         })
         if (openOrders.length > 0) {
             return res.status(400).json({
