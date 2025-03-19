@@ -1,0 +1,43 @@
+name: Secure Vercel Cron Jobs
+
+on:
+    schedule:
+        - cron: '*/5 * * * *' # Runs every 5 minutes
+    workflow_dispatch: # Allows manual triggering
+
+jobs:
+    call-api:
+        environment: cron
+        runs-on: ubuntu-latest
+        steps:
+            - name: Call API for Different Jobs
+              run: |
+                  API_URL="${{ secrets.API_URL }}"
+                  TOKEN="${{ secrets.INTERVAL_CLIENT_TOKEN }}"
+
+                  # Function to make API calls
+                  call_api() {
+                    local job_name=$1
+                    curl -X POST "$API_URL/intervals/$job_name" \
+                         -H "Content-Type: application/json" \
+                         -d '{"token": "'"$TOKEN"'"}' &
+                  }
+
+                  # complete-orders (Runs once per 5 minutes)
+                  call_api "complete-orders"
+
+                  # Loop for 5 minutes
+                  for minute in {1..5}; do
+                    # delete-unclaimed-orders & send-ready-notifications (Once per minute)
+                    call_api "delete-unclaimed-orders"
+                    call_api "send-ready-notifications"
+
+                    # Run seller-timeout & send-notifications every 10 seconds (6 times per minute)
+                    for i in {1..6}; do
+                      call_api "seller-timeout"
+                      call_api "send-notifications"
+                      
+                      # Wait 10 seconds before looping again
+                      sleep 10
+                    done
+                  done

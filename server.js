@@ -69,15 +69,14 @@ app.use(
     })
 )
 
-// Root route (API spec?)
+// Root route
 app.get('/', (req, res) => {
-    res.send(
-        'Hey congrats you connected to my API. I might give you a spec one day. Time will tell.'
-    )
+    res.send('You have connected to my API.')
 })
 
 // Include route files
 const authRoutes = require('./routes/authRoutes')
+const intervalRoutes = require('./routes/intervalRoutes')
 const orderRoutes = require('./routes/orderRoutes')
 const paymentRoutes = require('./routes/paymentRoutes')
 const payoutRoutes = require('./routes/payoutRoutes')
@@ -87,6 +86,7 @@ const restaurantRoutes = require('./routes/restaurantRoutes')
 
 // Use routes
 app.use('/auth', authRoutes)
+app.use('/intervals', intervalRoutes)
 app.use('/orders', orderRoutes)
 app.use('/payment', paymentRoutes)
 app.use('/payout', payoutRoutes)
