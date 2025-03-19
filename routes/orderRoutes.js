@@ -422,7 +422,7 @@ app.patch(
             await order.save()
 
             if (buyer?.pushToken) {
-                expoClient.queueNotification({
+                expoClient.sendNotification({
                     to: buyer.pushToken,
                     title: 'Order Confirmed',
                     body: `Your ${order.restaurant} order is confirmed and will be ready at ${formatTime(parsedReadyTime)}! The name to use for pickup is ${order.sellerName}.`,
@@ -492,7 +492,7 @@ app.patch('/:id/dispute', isAuthenticated, async (req, res) => {
             'pushToken firstName email'
         )
         if (seller?.pushToken) {
-            expoClient.queueNotification({
+            expoClient.sendNotification({
                 to: seller.pushToken,
                 title: 'Order Disputed',
                 body: `Your order from ${order.restaurant} has been disputed by the buyer. We will review the issue and get back to you soon. Your payment will be held until the issue is resolved.`,
