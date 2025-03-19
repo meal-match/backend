@@ -63,6 +63,8 @@ Open the newly created `.env` file and enter all needed environment variables, l
 -   `EMAIL_PASS`: The password to the email address.
 -   `EMAIL_PORT`: The port of the SMTP email server.
 -   `ENVIRONMENT`: The environment of the deployment (`dev` or `prod`).
+-   `INTERVAL_CLIENT_TOKEN`: Token to pass for interval client routes.
+-   `LOCAL`: Boolean as to whether the environment is locally deployed or on a remote server, such as Vercel.
 -   `PORT`: The port the application will run on (optional, defaults to `3000`).
 -   `SESSION_SECRET`: The string used to encode session data.
 -   `STRIPE_SECRET_KEY`: The client secret that will be used to login to [Stripe](https://dashboard.stripe.com).
